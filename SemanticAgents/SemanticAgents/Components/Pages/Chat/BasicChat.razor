@@ -1,5 +1,6 @@
 ﻿@page "/chat/basicChat"
 @rendermode InteractiveServer
+@using Microsoft.Extensions.Options
 @using Microsoft.SemanticKernel
 @using Microsoft.SemanticKernel.ChatCompletion
 @using Microsoft.SemanticKernel.Connectors.OpenAI
@@ -59,7 +60,8 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
 {
     <div class="row mt-2">
         <label for="userMessage" class="form-label">Your Message:</label>
-        <textarea rows="4" class="bg-dark text-light form-control" id="userMessage" @bind="_userMessage" @onfocus="ClearUserMessage" />
+        <textarea rows="4" class="bg-dark text-light form-control" id="userMessage" 
+            @bind="_userMessage" @bind:after="SubmitUserMessage" @onfocus="ClearUserMessage" />
     </div>
 
     <div class="row mt-2">
@@ -112,8 +114,11 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
     private ILMStudioHttpProvider _lmStudioHttpProvider { get; set; } = default!;
     [Inject]
     private IOllamaHttpProvider _ollamaHttpProvider { get; set; } = default!;
+    
 
     private string? _configuredModelProvider;
+    // private string? _configuredTextModelId;
+
     private bool _modelIsLoaded;
 
     private void SetModelIsLoaded(bool isLoaded) => _modelIsLoaded = isLoaded;

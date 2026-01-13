@@ -1,11 +1,17 @@
-﻿@using SemanticAgents.Abstractions
+﻿@using Microsoft.Extensions.Options
+@using SemanticAgents.Abstractions
+@using SemanticAgents.Configuration
 @using SemanticAgents.SemanticKernelDTOs
 
 @* <h4>Local Model </h4> *@
 
 @if (!string.IsNullOrWhiteSpace(_errorMessage))
 {
-    <p class="text-danger m-2">@_errorMessage</p>
+    <p class="text-danger-alt m-2">@_errorMessage</p>
+}
+@if (!string.IsNullOrWhiteSpace(_warningMessage))
+{
+    <p class="text-warning-alt m-2">@_warningMessage</p>
 }
 
 @if (!_loadingConfiguration)
@@ -53,19 +59,25 @@
     private ILMStudioHttpProvider? _lmStudioHttpProvider { get; set; }
     [Inject]
     private IOllamaHttpProvider? _ollamaHttpProvider { get; set; }
-
+    [Inject]
+    private IOptions<SemanticKernelSettings> _semanticKernelSettings { get; set; } = default!;
     [Parameter]
     public EventCallback<bool> ModelIsLoaded { get; set; }
 
     private bool _loadingConfiguration;
     private bool _thinking;
     private string? _errorMessage;
+    private string? _warningMessage;
 
+    private string? _configuredTextModelId;
     private string? _loadedModelId;
     private string? _modelInfo;
 
     private async Task GetLMStudioLoadedModelData()
     {
+        // Get Text Model Id specified by configuration
+        _configuredTextModelId = _semanticKernelSettings.Value.LMStudio_TextModelId;
+
         if (_lmStudioHttpProvider is null)
         {
             _errorMessage = $"The LMStudio Http Provider is null";
@@ -84,6 +96,9 @@
                     _modelInfo = ($"Model ID: {loaded.Id}, Type: {loaded.Type}, Publisher: {loaded.Publisher}, State: {loaded.State}");
                     _loadedModelId = loaded.Id;
                     modelIsLoaded = true;
+                    if (_loadedModelId != _configuredTextModelId) _warningMessage = $"Warning: The actual text model \'{_loadedModelId}\' " +
+                    $"loaded in LMStudio does not match the model \'{_configuredTextModelId}\' specified by the application configuration. " +
+                    $"The model may not behave as expected.";
                 }
                 else
                 {
@@ -100,6 +115,9 @@
 
     private async Task GetOllamaLoadedModelData()
     {
+        // Get Text Model Id specified by configuration
+        _configuredTextModelId = _semanticKernelSettings.Value.Ollama_TextModelId;
+
         // NOTE the list of models is not updated based on actual loaded models as not loading more than one model - only selected model is updated
         if (_ollamaHttpProvider is null)
         {
@@ -119,6 +137,9 @@
                     _modelInfo = ($"Model ID: {loaded.Model}");
                     _loadedModelId = loaded.Model;
                     modelIsLoaded = true;
+                    if (_loadedModelId != _configuredTextModelId) _warningMessage = $"Warning: The actual text model \'{_loadedModelId}\' " +
+                    $"loaded in Ollama does not match the model \'{_configuredTextModelId}\' specified by the application configuration. " +
+                    $"The model may not behave as expected.";
                 }
                 else
                 {
