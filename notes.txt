@@ -1,0 +1,20 @@
+NUGETS
+
+    Microsoft.Extensions.AI
+    Microsoft.Extensions.AI.Abstractions
+    Microsoft.Extensions.VectorData.Abstractions
+    Microsoft.SemanticKernel
+    ??? Microsoft.SemanticKernel.Connectors.MongoDB
+    Microsoft.SemanticKernel.Connectors.OpenAI
+    ??? Microsoft.SemanticKernel.Plugins.Core
+    Microsoft.SemanticKernel.Plugins.OpenApi
+    Microsoft.SemanticKernel.PromptTemplates.Handlebars
+
+SUPPRESS
+    SKEXP0010;SKEXP0001
+    Both server and client projects > Properties > Build > Suppress Warnings > enter codes and rebuild
+
+USER SECRETS IN CLIENT
+    Add packages:  Microsoft.Extensions.Configuration and Microsoft.Extensions.Configuration.UserSecrets
+    Add statement:  builder.Configuration.AddUserSecrets<Program>();
+    Can only read from appsettings.json, NOT from user-secrets on client project

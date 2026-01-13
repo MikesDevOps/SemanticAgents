@@ -1,0 +1,49 @@
+﻿@page "/config/client"
+@using Microsoft.Extensions.Options
+@using SemanticAgents.Client.Configuration
+@rendermode InteractiveWebAssembly
+
+<h3>Blazor Client Configuration</h3>
+
+<div class="row mt-2">
+    <div class="col-3">
+        <a class="btn btn-primary form-control" @onclick="GetClientConfigurationSettingsTestValue">Get Config Test Value</a>
+    </div>
+    <div class="col-3">
+        <input type="text" class="form-control" @bind-value="_semanticKernelSettingsTestValue" />
+    </div>
+    @if (!string.IsNullOrWhiteSpace(_semanticKernelSettingsTestValue))
+    {
+        <div class="col-3">
+            <a class="btn btn-warning form-control" @onclick="ClearClientConfigurationSettingsTestValue">Clear Config Test Value</a>
+        </div>
+    }
+</div>
+<div class="row mt-2">
+    <div class="col-3">
+        <a class="btn btn-primary form-control" @onclick="GetLocalApiBaseAddress">Get Local API Base Address</a>
+    </div>
+    <div class="col-3">
+        <input type="text" class="form-control" @bind-value="_localAPIBaseAddress" />
+    </div>
+    @if (!string.IsNullOrWhiteSpace(_localAPIBaseAddress))
+    {
+        <div class="col-3">
+            <a class="btn btn-warning form-control" @onclick="ClearLocalApiBaseAddress">Clear Local API Base Address</a>
+        </div>
+    }
+</div>
+
+@code {
+    [Inject]
+    public IOptions<ClientConfigurationSettings>? SemanticKernelOptions { get; set; }
+
+    private string? _semanticKernelSettingsTestValue;
+    private string? _localAPIBaseAddress;
+
+    private void GetClientConfigurationSettingsTestValue() => _semanticKernelSettingsTestValue = SemanticKernelOptions?.Value.TestValue;
+    private void ClearClientConfigurationSettingsTestValue() => _semanticKernelSettingsTestValue = null;
+
+    private void GetLocalApiBaseAddress() => _localAPIBaseAddress = SemanticKernelOptions?.Value.LocalAPIBaseAddress;
+    private void ClearLocalApiBaseAddress() => _localAPIBaseAddress = null;
+}

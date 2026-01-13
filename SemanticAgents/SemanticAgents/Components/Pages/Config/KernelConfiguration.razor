@@ -1,0 +1,38 @@
+﻿@page "/config/kernel"
+@rendermode InteractiveServer
+@using Microsoft.Extensions.Options
+@using SemanticAgents.Abstractions
+@using SemanticAgents.Client.Abstractions
+@using SemanticAgents.Client.Utility
+@using SemanticAgents.Configuration
+@using SemanticAgents.SemanticKernelDTOs
+@inject IToastrService Toastr
+
+<PageTitle>Kernel Configuration</PageTitle>
+
+<h3>Semantic Kernel Configuration</h3>
+
+@if (_configuredModelProvider == "OpenAI" || _configuredModelProvider == "Grok")
+{
+    <RemoteModelConfiguration ConfiguredModelProvider="@_configuredModelProvider"></RemoteModelConfiguration>
+}
+else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "Ollama")
+{
+    <LocalModelConfiguration ConfiguredModelProvider="@_configuredModelProvider" ModelIsLoaded="SetModelIsLoaded"></LocalModelConfiguration>
+}
+
+@code {
+
+    [CascadingParameter(Name = "SemanticKernelInfo")]      // Root level cascading parameter
+    private SemanticKernelInfo? _kernelInfo { get; set; }
+
+    private string? _configuredModelProvider;
+
+    private bool _modelIsLoaded;
+    private async Task SetModelIsLoaded(bool isLoaded) => await Toastr.ShowToastrSuccess("Model Loaded!");
+
+    protected override void OnInitialized()
+    {
+        if (_kernelInfo is not null) _configuredModelProvider = _kernelInfo.ModelProvider;
+    }
+}

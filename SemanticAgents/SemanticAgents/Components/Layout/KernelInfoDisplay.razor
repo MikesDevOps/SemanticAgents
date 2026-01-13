@@ -1,0 +1,28 @@
+﻿@rendermode InteractiveServer
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using SemanticAgents.Configuration
+
+@* <AuthorizeView>
+    <NotAuthorized>
+        <div class="d-flex align-items-center mx-5">
+    <h6 class="my-0 text-yellow"><i class="bi-cpu"></i>&nbsp; Model Provider: Please log in</h6>
+</div>
+    </NotAuthorized>
+    <Authorized>
+        <div class="d-flex align-items-center mx-5">
+    <h6 class="my-0 text-yellow"><i class="bi-cpu"></i>&nbsp; Model Provider: (@KernelInfo?.ModelProvider)</h6>
+</div>
+    </Authorized>
+</AuthorizeView> *@
+
+<div class="d-flex align-items-center mx-5">
+    <p class="my-0 text-yellow-alt text-sm-start"><i class="bi-lightning-charge-fill"></i><b><i>&nbsp; Model Provider: @KernelInfo?.ModelProvider</i></b></p>
+    @* lightbulb or lightbulb-fill magic*@
+</div>
+
+@code {
+
+    [CascadingParameter(Name = "SemanticKernelInfo")]      // Root level cascading parameter 
+    public SemanticKernelInfo? KernelInfo { get; set; }
+}

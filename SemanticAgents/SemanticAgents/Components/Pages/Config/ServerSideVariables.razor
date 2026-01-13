@@ -1,0 +1,274 @@
+﻿@page "/config/server"
+@using Microsoft.Extensions.Options
+@using SemanticAgents.Abstractions
+@using SemanticAgents.Client.Utility
+@using SemanticAgents.Configuration
+@using SemanticAgents.SemanticKernelDTOs
+@rendermode InteractiveServer
+
+<PageTitle>Server Side Varialbles</PageTitle>
+
+
+<h3>Server Side Variables</h3>
+
+<div class="row mt-2">
+    <div class="col-6">
+        @* LEFT COLUMN *@
+        <div class="row mt-2">
+            <div class="col-5">
+                <a class="btn btn-primary form-control" @onclick="GetOpenAiApiKey">Get Open AI ApiKey</a>
+            </div>
+            <div class="col-5">
+                <input type="text" class="bg-dark text-light form-control" @bind-value="_openAi_ApiKey" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_openAi_ApiKey))
+            {
+                <div class="col-2">
+                    <a class="btn btn-warning form-control" @onclick="ClearOpenAiApiKey">Clear</a>
+                </div>
+            }
+        </div>
+        <div class="row mt-2">
+            <div class="col-5">
+                <a class="btn btn-primary form-control" @onclick="GetGrokApiKey">Get Grok ApiKey</a>
+            </div>
+            <div class="col-5">
+                <input type="text" class="bg-dark text-light form-control" @bind-value="_grok_ApiKey" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_grok_ApiKey))
+            {
+                <div class="col-2">
+                    <a class="btn btn-warning form-control" @onclick="ClearGrokApiKey">Clear</a>
+                </div>
+            }
+        </div>
+        <div class="row mt-2">
+            <div class="col-5">
+                <a class="btn btn-primary form-control" @onclick="GetLMStudioEndpoint">Get LM Studio Endpoint</a>
+            </div>
+            <div class="col-5">
+                <input type="text" class="bg-dark text-light form-control" @bind-value="_lmStudioEndpoint" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_lmStudioEndpoint))
+            {
+                <div class="col-2">
+                    <a class="btn btn-warning form-control" @onclick="ClearLMStudioEndpoint">Clear</a>
+                </div>
+            }
+        </div>
+        <div class="row mt-2">
+            <div class="col-5">
+                <a class="btn btn-primary form-control" @onclick="GetOllamaEndpoint">Get Ollama Endpoint</a>
+            </div>
+            <div class="col-5">
+                <input type="text" class="bg-dark text-light form-control" @bind-value="_ollamaEndpoint" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_ollamaEndpoint))
+            {
+                <div class="col-2">
+                    <a class="btn btn-warning form-control" @onclick="ClearOllamaEndpoint">Clear</a>
+                </div>
+            }
+        </div>
+        <div class="row mt-2">
+            <div class="col-5">
+                <a class="btn btn-primary form-control" @onclick="GetGrokEndpoint">Get Grok Endpoint</a>
+            </div>
+            <div class="col-5">
+                <input type="text" class="bg-dark text-light form-control" @bind-value="_grokEndpoint" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_grokEndpoint))
+            {
+                <div class="col-2">
+                    <a class="btn btn-warning form-control" @onclick="ClearGrokEndpoint">Clear</a>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-6">
+        @* RIGHT COLUMN *@
+        <div class="row mt-2">
+            <div class="col-5">
+                <a class="btn btn-primary form-control" @onclick="GetLMStudioTextModelId">Get LM Studio Text Model Id</a>
+            </div>
+            <div class="col-5">
+                <input type="text" class="bg-dark text-light form-control" @bind-value="_lmStudio_TextModelId" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_lmStudio_TextModelId))
+            {
+                <div class="col-2">
+                    <a class="btn btn-warning form-control" @onclick="ClearLMStudioTextModelId">Clear</a>
+                </div>
+            }
+        </div>
+        <div class="row mt-2">
+            <div class="col-5">
+                <a class="btn btn-primary form-control" @onclick="GetOllamaTextModelId">Get Ollama Text Model Id</a>
+            </div>
+            <div class="col-5">
+                <input type="text" class="bg-dark text-light form-control" @bind-value="_ollama_TextModelId" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_ollama_TextModelId))
+            {
+                <div class="col-2">
+                    <a class="btn btn-warning form-control" @onclick="ClearOllamaTextModelId">Clear</a>
+                </div>
+            }
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-5">
+                <a class="btn btn-primary form-control" @onclick="GetOpenAiTextModelId">Get Open AI Text Model Id</a>
+            </div>
+            <div class="col-5">
+                <input type="text" class="bg-dark text-light form-control" @bind-value="_openAi_TextModelId" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_openAi_TextModelId))
+            {
+                <div class="col-2">
+                    <a class="btn btn-warning form-control" @onclick="ClearOpenAiTextModelId">Clear</a>
+                </div>
+            }
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-5">
+                <a class="btn btn-primary form-control" @onclick="GetGrokTextModelId">Get Grok Text Model Id</a>
+            </div>
+            <div class="col-5">
+                <input type="text" class="bg-dark text-light form-control" @bind-value="_grok_TextModelId" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_grok_TextModelId))
+            {
+                <div class="col-2">
+                    <a class="btn btn-warning form-control" @onclick="ClearGrokTextModelId">Clear</a>
+                </div>
+            }
+        </div>
+        <div class="row mt-2">
+            <div class="col-5">
+                <a class="btn btn-primary form-control" @onclick="GetOpenAiImageModelId">Get Open AI Image Model Id</a>
+            </div>
+            <div class="col-5">
+                <input type="text" class="bg-dark text-light form-control" @bind-value="_openAi_ImageModelId" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_openAi_ImageModelId))
+            {
+                <div class="col-2">
+                    <a class="btn btn-warning form-control" @onclick="ClearOpenAiImageModelId">Clear</a>
+                </div>
+            }
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-5">
+                <a class="btn btn-primary form-control" @onclick="GetGrokImageModelId">Get Grok Image Model Id</a>
+            </div>
+            <div class="col-5">
+                <input type="text" class="bg-dark text-light form-control" @bind-value="_grok_ImageModelId" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_grok_ImageModelId))
+            {
+                <div class="col-2">
+                    <a class="btn btn-warning form-control" @onclick="ClearGrokImageModelId">Clear</a>
+                </div>
+            }
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-5">
+                <a class="btn btn-primary form-control" @onclick="GetLMStudioImageModelId">Get LMStudio Image Model Id</a>
+            </div>
+            <div class="col-5">
+                <input type="text" class="bg-dark text-light form-control" @bind-value="_lmStudio_ImageModelId" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_lmStudio_ImageModelId))
+            {
+                <div class="col-2">
+                    <a class="btn btn-warning form-control" @onclick="ClearLMStudioImageModelId">Clear</a>
+                </div>
+            }
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-5">
+                <a class="btn btn-primary form-control" @onclick="GetOllamaImageModelId">Get Ollama Image Model Id</a>
+            </div>
+            <div class="col-5">
+                <input type="text" class="bg-dark text-light form-control" @bind-value="_ollama_ImageModelId" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_ollama_ImageModelId))
+            {
+                <div class="col-2">
+                    <a class="btn btn-warning form-control" @onclick="ClearOllamaImageModelId">Clear</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Inject]
+    public IOptions<SemanticKernelSettings>? SemanticKernelSettings { get; set; }
+
+    // private string? _errorMessage;
+    // private string? _configuredModelProvider;
+    // private string? _configuredModelId;
+    // private string? _modelInfo;
+
+    private string? _lmStudioEndpoint;
+    private string? _ollamaEndpoint;
+    private string? _grokEndpoint;
+    private string? _lmStudio_TextModelId;
+    private string? _ollama_TextModelId;
+    private string? _openAi_TextModelId;
+    private string? _grok_TextModelId;
+    private string? _openAi_ImageModelId;
+    private string? _grok_ImageModelId;
+    private string? _lmStudio_ImageModelId;
+    private string? _ollama_ImageModelId;
+
+    private string? _openAi_ApiKey;
+    private string? _grok_ApiKey;
+
+
+    private void GetLMStudioEndpoint() => _lmStudioEndpoint = SemanticKernelSettings?.Value.LMStudio_Endpoint;
+    private void ClearLMStudioEndpoint() => _lmStudioEndpoint = null;
+
+    private void GetOllamaEndpoint() => _ollamaEndpoint = SemanticKernelSettings?.Value.Ollama_Endpoint;
+    private void ClearOllamaEndpoint() => _ollamaEndpoint = null;
+
+    private void GetGrokEndpoint() => _grokEndpoint = SemanticKernelSettings?.Value.Grok_Endpoint;
+    private void ClearGrokEndpoint() => _grokEndpoint = null;
+
+    private void GetLMStudioTextModelId() => _lmStudio_TextModelId = SemanticKernelSettings?.Value.LMStudio_TextModelId;
+    private void ClearLMStudioTextModelId() => _lmStudio_TextModelId = null;
+
+    private void GetOllamaTextModelId() => _ollama_TextModelId = SemanticKernelSettings?.Value.Ollama_TextModelId;
+    private void ClearOllamaTextModelId() => _ollama_TextModelId = null;
+
+    private void GetOpenAiTextModelId() => _openAi_TextModelId = SemanticKernelSettings?.Value.OpenAI_TextModelId;
+    private void ClearOpenAiTextModelId() => _openAi_TextModelId = null;
+
+    private void GetGrokTextModelId() => _grok_TextModelId = SemanticKernelSettings?.Value.Grok_TextModelId;
+    private void ClearGrokTextModelId() => _grok_TextModelId = null;
+
+    private void GetOpenAiImageModelId() => _openAi_ImageModelId = SemanticKernelSettings?.Value.OpenAI_ImageModelId;
+    private void ClearOpenAiImageModelId() => _openAi_ImageModelId = null;
+
+    private void GetGrokImageModelId() => _grok_ImageModelId = SemanticKernelSettings?.Value.Grok_ImageModelId;
+    private void ClearGrokImageModelId() => _grok_ImageModelId = null;
+
+    private void GetLMStudioImageModelId() => _lmStudio_ImageModelId = $"{SemanticKernelSettings?.Value.LMStudio_ImageModelId?.Substring(0, 7)}...";
+    private void ClearLMStudioImageModelId() => _lmStudio_ImageModelId = null;
+
+    private void GetOllamaImageModelId() => _ollama_ImageModelId = $"{SemanticKernelSettings?.Value.Ollama_ImageModelId?.Substring(0, 7)}...";
+    private void ClearOllamaImageModelId() => _ollama_ImageModelId = null;
+
+    private void GetOpenAiApiKey() => _openAi_ApiKey = $"{SemanticKernelSettings?.Value.OpenAI_ApiKey?.Substring(0, 7)}...";
+    private void ClearOpenAiApiKey() => _openAi_ApiKey = null;
+
+    private void GetGrokApiKey() => _grok_ApiKey = $"{SemanticKernelSettings?.Value.Grok_ApiKey?.Substring(0, 7)}...";
+    private void ClearGrokApiKey() => _grok_ApiKey = null;
+}

@@ -1,0 +1,112 @@
+﻿<nav class="navbar navbar-expand-md navbar-dark">
+    <div class="container-fluid">
+
+        @* <a class="navbar-brand" href="">Blazor Template</a> *@
+
+        <a class="px-3" href="">
+            <img src="logos/logo14.png" height="44" alt="logo" />
+            @* <img src="logos/logo14.png" height="44" alt="logo" /> *@
+            @* <img src="logos/logo4.png" height="48" alt="logo" /> *@
+            @* <img src="logos/logo5.png" height="80" alt="logo" /> *@
+            @* <img src="logos/logo8.png" height="48" alt="logo" /> *@
+        </a>
+
+        <button class="navbar-toggler @NavButtonCssClass" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
+                aria-controls="navbarCollapse" aria-label="Toggle navigation" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse @NavBarCssClass" id="navbarCollapse" @onclick="ToggleNavMenu">
+            <ul class="navbar-nav me-auto mb-2 mb-md-0">
+
+                <li class="nav-item px-3"> 
+                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                        <i class="bi-house-door"></i> &nbsp; Home
+                        <span class="visually-hidden">(current)</span>
+                    </NavLink>
+                </li>
+
+                <li class="nav-item px-3 dropdown">
+                    <NavLink class="nav-link dropdown-toggle" href="music" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <i class="bi-music-note-beamed"></i> &nbsp; Music
+                    </NavLink>
+                    <div class="dropdown-menu dropdown-menu-dark">
+                        <NavLink class="dropdown-item" href="music/home" Match="NavLinkMatch.All">
+                            <i class="bi-music-note"></i> &nbsp; Music Home
+                        </NavLink>                       
+                        @* <div class="dropdown-divider"></div> *@
+                    </div>
+                </li>
+
+                <li class="nav-item px-3 dropdown">
+                    <NavLink class="nav-link dropdown-toggle" href="config" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <i class="bi-gear-fill"></i> &nbsp; Configuration
+                    </NavLink>
+                    <div class="dropdown-menu dropdown-menu-dark">
+                        <NavLink class="dropdown-item" href="config/kernel" Match="NavLinkMatch.All">
+                            <i class="bi-gear"></i> &nbsp; Kernel Configuration
+                        </NavLink>
+                        <div class="dropdown-divider"></div>
+                        <NavLink class="dropdown-item" href="config/server" Match="NavLinkMatch.All">
+                            <i class="bi-gear"></i> &nbsp; Server Variables
+                        </NavLink>
+                        <NavLink class="dropdown-item" href="config/client" Match="NavLinkMatch.All">
+                            <i class="bi-gear"></i> &nbsp; Client Variables
+                        </NavLink>
+                        <div class="dropdown-divider"></div>
+                        <NavLink class="dropdown-item" href="config/lmstudioModelInfo" Match="NavLinkMatch.All">
+                            <i class="bi-box-fill"></i> &nbsp; LMStudio Models
+                        </NavLink>
+                        <NavLink class="dropdown-item" href="config/ollamaModelInfo" Match="NavLinkMatch.All">
+                            <i class="bi-box-fill"></i> &nbsp; Ollama Models
+                        </NavLink>
+                    </div>
+                </li>
+
+                <li class="nav-item px-3 dropdown">
+                    <NavLink class="nav-link dropdown-toggle" href="chat" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <i class="bi-chat-text-fill"></i> &nbsp; Chat
+                    </NavLink>
+                    <div class="dropdown-menu dropdown-menu-dark">
+                        <NavLink class="dropdown-item" href="chat/basicChat" Match="NavLinkMatch.All">
+                            <i class="bi-chat-text"></i> &nbsp; Basic Chat
+                        </NavLink>
+
+                        @* <div class="dropdown-divider"></div> *@
+                    </div>
+                </li>
+
+
+
+
+
+
+
+
+
+
+            </ul>
+
+            <div>
+                <div class="d-flex">
+                    <KernelInfoDisplay />
+                    <LoginDisplay />
+                </div>
+            </div>
+
+        </div>
+    </div>
+</nav>
+<BannerTop />
+
+@code {
+    private bool collapseNavMenu = true;
+    private string? NavBarCssClass => collapseNavMenu ? null : "show";
+    private string? NavButtonCssClass => collapseNavMenu ? "collapsed" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}
+
+

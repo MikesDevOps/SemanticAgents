@@ -1,0 +1,155 @@
+﻿@using SemanticAgents.Abstractions
+@using SemanticAgents.SemanticKernelDTOs
+
+@* <h4>Local Model </h4> *@
+
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <p class="text-danger m-2">@_errorMessage</p>
+}
+
+@if (!_loadingConfiguration)
+{
+    <div class="row mt-2">
+        <div class="col-2">
+            <h5 class="mt-2">Model Provider:</h5>
+        </div>
+        <div class="col-3">
+            <input inert type="text" class="bg-dark text-light form-control" @bind-value="ConfiguredModelProvider" />
+        </div>
+        <div class="col-2 offset-1">
+            <h5 class="mt-2">Loaded Model:</h5>
+        </div>
+        <div class="col-3">
+            <input inert type="text" class="bg-dark text-light form-control" @bind-value="_loadedModelId" />
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h6 class="text-info-alt"><i>@_modelInfo</i></h6>
+        </div>
+    </div>
+}
+
+@if (_thinking)
+{
+    <div class="row mt-2">
+        <div class="col-12">
+            <p class="text-yellow-alt"><i>Validating LLM Configuration ...</i></p>
+        </div>
+    </div>
+    <div class="mx-auto text-center mb-3 mt-3" style="height:160px;">
+        <div class="spinner-border text-yellow-alt role-status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string? ConfiguredModelProvider { get; set; }
+    [Inject]
+    private ILMStudioHttpProvider? _lmStudioHttpProvider { get; set; }
+    [Inject]
+    private IOllamaHttpProvider? _ollamaHttpProvider { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ModelIsLoaded { get; set; }
+
+    private bool _loadingConfiguration;
+    private bool _thinking;
+    private string? _errorMessage;
+
+    private string? _loadedModelId;
+    private string? _modelInfo;
+
+    private async Task GetLMStudioLoadedModelData()
+    {
+        if (_lmStudioHttpProvider is null)
+        {
+            _errorMessage = $"The LMStudio Http Provider is null";
+            return;
+        }
+        bool modelIsLoaded = false;
+        var result = await _lmStudioHttpProvider.GetLMStudioLoadedModelsAsync();
+        if (result.IsSuccess)
+        {
+            List<LMStudioModelDTO>? loadedModels = result.LoadedModels?.ToList();
+            if (loadedModels is not null && loadedModels.Any())
+            {
+                LMStudioModelDTO? loaded = loadedModels.FirstOrDefault(m => m.State == "loaded");
+                if (loaded is not null)
+                {
+                    _modelInfo = ($"Model ID: {loaded.Id}, Type: {loaded.Type}, Publisher: {loaded.Publisher}, State: {loaded.State}");
+                    _loadedModelId = loaded.Id;
+                    modelIsLoaded = true;
+                }
+                else
+                {
+                    _modelInfo = $"A loaded LM Studio model was not found.";
+                    _errorMessage = "Please check LM Studio configuration.";
+                }
+            }
+        }
+        else _errorMessage = result.ErrorMessage;
+        _loadingConfiguration = false;
+        _thinking = false;
+        await ModelIsLoaded.InvokeAsync(modelIsLoaded);
+    }
+
+    private async Task GetOllamaLoadedModelData()
+    {
+        // NOTE the list of models is not updated based on actual loaded models as not loading more than one model - only selected model is updated
+        if (_ollamaHttpProvider is null)
+        {
+            _errorMessage = $"The Ollama Http Provider is null";
+            return;
+        }
+        bool modelIsLoaded = false;
+        var result = await _ollamaHttpProvider.GetOllamaLoadedModelsAsync();
+        if (result.IsSuccess)
+        {
+            List<OllamaModelDTO>? loadedModels = result.LoadedModels?.ToList();
+            if (loadedModels is not null && loadedModels.Any())
+            {
+                OllamaModelDTO? loaded = loadedModels.FirstOrDefault();
+                if (loaded is not null)
+                {
+                    _modelInfo = ($"Model ID: {loaded.Model}");
+                    _loadedModelId = loaded.Model;
+                    modelIsLoaded = true;
+                }
+                else
+                {
+                    _modelInfo = $"An Ollama model was not found.";
+                    _errorMessage = "Please check Ollama configuration. It may take a moment for the model query to respond.";
+                }
+            }
+        }
+        else _errorMessage = result.ErrorMessage;
+        _loadingConfiguration = false;
+        _thinking = false;
+        await ModelIsLoaded.InvokeAsync(modelIsLoaded);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (ConfiguredModelProvider == "LMStudio") await GetLMStudioLoadedModelData();
+            else if (ConfiguredModelProvider == "Ollama") await GetOllamaLoadedModelData();
+            
+            StateHasChanged();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        _loadingConfiguration = true;
+        _thinking = true;
+        // GetConfiguredProviderDefaults();
+        // _chatService = _kernel.GetRequiredService<IChatCompletionService>();
+        // if (_kernelInfo is not null) _configuredModelProvider = _kernelInfo.ModelProvider;
+    }
+}

@@ -1,0 +1,67 @@
+﻿@page "/config/lmstudioModelInfo"
+@rendermode InteractiveServer
+@using SemanticAgents.Client.Utility
+
+<PageTitle>LMStudio Models</PageTitle>
+
+<h3>LMStudio Model Library</h3>
+
+<div class="row mt-2">
+    <div class="col-12">
+        <table class="table table-dark table-bordered">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Quant</th>
+                    <th>Params (B)</th>
+                    <th>Context (K)</th>
+                    <th>Tools</th>
+                    <th>Reason</th>
+                    <th>Images</th>
+                    <th>Disk (GB)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (_models is not null)
+                {
+                    @foreach (var model in _models)
+                    {
+                        <tr style="cursor: pointer;" @onclick="() => ShowModelDescription(model.Name)">
+                            <td>@model.Name</td>
+                            <td>@model.Quantization</td>
+                            <td>@model.ParamsB</td>
+                            <td>@model.ContextLengthK</td>
+                            <td>@model.ToolUse</td>
+                            <td>@model.Reasoning</td>
+                            <td>@model.ImageInput</td>
+                            <td>@model.DiskSpace</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row mt-2">
+    <div class="col-12">
+        <textarea rows="6" class="bg-dark text-light form-control" @bind="_modelDescription" />
+    </div>
+</div>
+
+
+@code {
+    private List<ModelInfo>? _models;
+    
+    private string? _modelDescription;
+
+    private void ShowModelDescription(string modelName)
+    {
+        _modelDescription = _models?.FirstOrDefault(m => m.Name == modelName)?.Description;
+    }
+
+    protected override void OnInitialized()
+    {
+        _models = ModelLibrary.Models;
+    }
+}
