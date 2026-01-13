@@ -18,3 +18,6 @@ USER SECRETS IN CLIENT
     Add packages:  Microsoft.Extensions.Configuration and Microsoft.Extensions.Configuration.UserSecrets
     Add statement:  builder.Configuration.AddUserSecrets<Program>();
     Can only read from appsettings.json, NOT from user-secrets on client project
+
+GIT
+    Master first commit - basic chat layout, model provider as an option in configuration in Program.cs
