@@ -36,10 +36,13 @@ namespace Products.API.Infrastructure.Repositories
         public async Task<IEnumerable<Product>> GetProductsAsync(string? category = null)
         {
             IQueryable<Product> query = _products.AsQueryable();
-            if (category is not null)
+            if (!string.IsNullOrWhiteSpace(category))
             {
-                // CategoryEnum catEnum = (CategoryEnum) Enum.Parse(typeof(CategoryEnum), category);
-                query = query.Where(p => p.Category.ToString() == category);
+                if (Enum.TryParse(typeof(CategoryEnum), category, out object? result))
+                {
+                    query = query.Where(p => p.Category == (CategoryEnum)result);
+                }
+                
             }
             return await query.ToListAsync();
         }
