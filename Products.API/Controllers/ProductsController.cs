@@ -2,9 +2,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Products.API.Abstractions;
 using Products.API.DTOs;
+using System.ComponentModel.DataAnnotations;
 
 namespace Products.API.Controllers
 {
+    /// <summary>
+    /// For Description annotations, refer to ProductDTOs, ImageDataDTOs and DocumentDataDTOs.  The LLM will be informed 
+    /// that these refer to Products, Images, and Documents.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class ProductsController : ControllerBase
@@ -33,8 +38,8 @@ namespace Products.API.Controllers
         }
 
         [EndpointSummary("Get Product by Id.")]
-        [EndpointDescription($"This endpoint gets a Product with the Id property specified by the path parameter 'id' and " +
-            $"if such a Product exists, returns it in the form of a ProductDTO.")]
+        [EndpointDescription($"This endpoint gets a Product in the form of a ProductDTO with the Id property specified by " +
+            "the path route parameter 'id'. If such a Product does not exist, a null value is returned.")]
         [Produces(typeof(ProductDTO))]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -48,9 +53,9 @@ namespace Products.API.Controllers
         }
 
         [EndpointSummary("Get all Products.")]
-        [EndpointDescription($"This endpoint gets all of the Products from the database and returns them in the form of a " +
-            $"collection of ProductDTOs. If the optional query string parameter 'category' is provided, the Products returned " +
-            $"will be limited to those whose Category property matches the provided category query string parameter.")]
+        [EndpointDescription($"This endpoint gets all Products from the database in the form of a collection of ProductDTOs. " +
+            "If the optional query string parameter 'category' is provided, the ProductDTOs returned will be limited to those " +
+            "for which their Category enum property's value is equal to the provided category string.")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]
@@ -79,7 +84,9 @@ namespace Products.API.Controllers
 
         [EndpointSummary("Update an existing Product.")]
         [EndpointDescription($"This endpoint gets a Product from the database and updates it's properties based on the properties " +
-            $"of the UpdateProductDTO input. The updated Product is saved to the database.")]
+            $"of the UpdateProductDTO input. All of the properties of the UpdateProductDTO should have values, so if a property " +
+            "value is not going to change then the UpdateProductDTO should have the products current value for that property.The updated " + 
+            "Product is saved to the database.")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]
@@ -120,8 +127,8 @@ namespace Products.API.Controllers
         }
 
         [EndpointSummary("Add a Document to a Product.")]
-        [EndpointDescription($"This endpoint gets a Product from the database and adds a Document to the Product's Documents property, " +
-            $"which is a List of DocumentData objects. The Product is then saved to the database.")]
+        [EndpointDescription($"This endpoint gets a ProductDTO from the database and adds a DocumentDataDTO to the Product's Documents property, " +
+            $"which is a List of DocumentDataDTO objects. The Product is then saved to the database.")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]

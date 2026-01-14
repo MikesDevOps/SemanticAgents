@@ -37,9 +37,12 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
                 <a class="btn button-custom-primary form-control" @onclick="ResetChat">Reset Chat</a>
             }
         </div>
+        <div class="col-2 offset-1">
+            <btn class="btn button-custom-primary form-control" @onclick="CheckIfCancellationTokenExists">Check CTS</btn>
+        </div>
         @if (_showReductionOption)
         {
-            <div class="col-2 offset-4">
+            <div class="col-2 offset-1">
                 <a class="btn button-custom-warning form-control" @onclick="ReduceChatHistory">Reduce History</a>
             </div>
             <div class="col-1">
@@ -66,12 +69,17 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
     </div>
 
     <div class="row mt-2">
-        <div class="col-4 offset-2">
-            <btn class="btn button-custom-success form-control" @onclick="SubmitUserMessage">Submit</btn>
+        <div class="col-4 offset-4">
+            @if (_processingUserRequest)
+            {
+                <btn class="btn button-custom-danger form-control" @onclick="CancelRequest">Cancel</btn>
+            }
+            else
+            {
+                <btn class="btn button-custom-success form-control" @onclick="SubmitUserMessage">Submit</btn>
+            }
         </div>
-        <div class="col-4">
-            <btn class="btn button-custom-danger form-control" @onclick="CancelRequest">Cancel</btn>
-        </div>
+        
     </div>
 
     @if (_showChatHistory)
@@ -144,6 +152,7 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
     private string? _assistantMessage = string.Empty;
     private string? _messageHistoryList; // = string.Empty;
     private bool _thinking = false;
+    private bool _processingUserRequest = false;
     private string? _errorMessage;
     private bool _showReductionOption;
     private int _reductionThreshold = 3;
@@ -151,10 +160,14 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
     private CancellationTokenSource? _cancellationTokenSource;
     private async Task CancelRequest()
     {
-        if (_cancellationTokenSource is not null)
-        {
-            await _cancellationTokenSource.CancelAsync();
-        }
+        if (_cancellationTokenSource is null) return;
+        await _cancellationTokenSource.CancelAsync();
+        _cancellationTokenSource.Dispose();
+    }
+    private async Task CheckIfCancellationTokenExists()
+    {
+        if (_cancellationTokenSource is null) await _toastr.ShowToastrInfo($"The CancellationTokenSource IS NULL.");
+        else await _toastr.ShowToastrInfo($"The CancellationTokenSource EXISTS.");
     }
 
     private async Task InitializeChat()
@@ -183,9 +196,10 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
             ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
         };
         _chatHistory = new ChatHistory();
-        _chatHistory.AddSystemMessage("You are a helpful assistant who has access to a collection of ProductDTOs, also referred to as " +
-            "products, using the plugin with pluginName \'products\'. Any user messages referring to products should be considered to " +
-            "refer to ProductDTOs associated with collection accessible using this plugin.");
+        _chatHistory.AddSystemMessage("You are a helpful assistant who has access to a collection of ProductDTOs using the plugin " +
+            "with the pluginName \'products\'. ProductDTOs are equevalent to Products.  Any reference to the term Products in user messages " +
+            "or Function descriptions should be considered to refer to ProductDTOs. Any reference to an Image should be understood to refer " +
+            "to an ImageDataDTO.  Any reference to a Document should be understood to refer to a DocumentDataDTO.");
         _userMessage = string.Empty;
         _assistantMessage = string.Empty;
         _messageHistoryList = string.Empty;
@@ -194,9 +208,10 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
     private void ResetChat()
     {
         _chatHistory = new ChatHistory();   // just using Clear() not working well.
-        _chatHistory.AddSystemMessage("You are a helpful assistant who has access to a collection of ProductDTOs, also referred to as " +
-            "products, using the plugin with pluginName \'products\'. Any user messages referring to products should be considered to " +
-            "refer to ProductDTOs associated with collection accessible using this plugin.");
+        _chatHistory.AddSystemMessage("You are a helpful assistant who has access to a collection of ProductDTOs using the plugin " +
+            "with the pluginName \'products\'. ProductDTOs are equevalent to Products.  Any reference to the term Products in user messages " +
+            "or Function descriptions should be considered to refer to ProductDTOs. Any reference to an Image should be understood to refer " +
+            "to an ImageDataDTO.  Any reference to a Document should be understood to refer to a DocumentDataDTO.");
         _userMessage = string.Empty;
         _assistantMessage = string.Empty;
         _messageHistoryList = string.Empty;
@@ -206,61 +221,65 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
     {
         try
         {
-            if (!string.IsNullOrWhiteSpace(_userMessage))
+            if (string.IsNullOrWhiteSpace(_userMessage))
             {
-                _cancellationTokenSource = new CancellationTokenSource();
+                await _toastr.ShowToastrError("Please enter a message.");
+                return;
+            }
+
+            using (_cancellationTokenSource = new CancellationTokenSource())
+            {
                 _thinking = true;
+                _processingUserRequest = true;
                 _chatHistory!.AddUserMessage(_userMessage);
                 _messageHistoryList += $"USER: {_userMessage}\n\n";
+                _assistantMessage = string.Empty;
 
-                // // OPTION 1
+                // // OPTION 1: NON-STREAMING
                 // ChatMessageContent assistantContent = await _chatService!.GetChatMessageContentAsync(_chatHistory!, _promptExecutionSettings, _kernel);
                 // _messageHistoryList += ($"{assistantContent.Content}\n\n");
                 // if (assistantContent.Content is not null) _chatHistory.AddAssistantMessage(assistantContent.Content);
                 // _userMessage = string.Empty;
 
-                // OPTION 2
-                _assistantMessage = string.Empty;
-
+                // OPTION 2: STREAMING
                 await foreach (StreamingChatMessageContent chunk in _chatService!.GetStreamingChatMessageContentsAsync(
                     _chatHistory, _promptExecutionSettings, _kernel, _cancellationTokenSource.Token))
                 {
                     _assistantMessage += chunk.Content;
-                    if (_cancellationTokenSource.Token.IsCancellationRequested) break;
-
-                    // while (!_cancellationTokenSource.Token.IsCancellationRequested)
-                    // {
-                    //     _assistantMessage += chunk.Content;
-                    // }
+                    if (_cancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        Console.WriteLine("Breaking out of streaming loop - the Operation has been cancelled by user.");
+                        _assistantMessage += $"\nOperation cancelled by user.";
+                        break;
+                    }
                 }
 
                 _messageHistoryList += ($"ASSISTANT: {_assistantMessage}\n\n");
                 if (_assistantMessage is not null) _chatHistory.AddAssistantMessage(_assistantMessage);
                 // _userMessage = string.Empty; // cleared with 'onfocus' event on element
                 if (_chatHistory.Count >= _reductionThreshold) _showReductionOption = true;
-
+                _thinking = false;
+                _processingUserRequest = false;
             }
-            else await _toastr.ShowToastrError("Please enter a message.");
-
-            _thinking = false;
-            _cancellationTokenSource = null;
+            // _cancellationTokenSource.Dispose();
         }
         catch (OperationCanceledException)
         {
-            await _toastr.ShowToastrError($"Operation cancelled by user.");
-            Console.WriteLine("\nOperation cancelled by user.");
+            await _toastr.ShowToastrInfo($"OPERATION CANCELLED EXCEPTION: Operation cancelled by user.");
+            Console.WriteLine("Operation Canceled Exception: Operation cancelled by user.");
             _assistantMessage += $"\nOperation cancelled by user.";
-            // _messageHistoryList += ($"ASSISTANT: {_assistantMessage}\n\n");
-            // if (_assistantMessage is not null) _chatHistory?.AddAssistantMessage(_assistantMessage);
             _thinking = false;
-            _cancellationTokenSource = null;
+            _processingUserRequest = false;
+            // _cancellationTokenSource?.Dispose();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"EXCEPTION: {ex.Message}");
+            await _toastr.ShowToastrError($"EXCEPTION: {ex.Message}");
+            Console.WriteLine($"****** \nEXCEPTION: {ex.Message}\n******");
             _errorMessage = ex.Message;
             _thinking = false;
-            _cancellationTokenSource = null;
+            _processingUserRequest = false;
+            // _cancellationTokenSource?.Dispose();
         }
     }
 
@@ -270,37 +289,49 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
     {
         Console.WriteLine($"ReduceChatHistory called with reduction type {_reductionType}");
 
-        if (_chatHistory is null)
+        try
         {
-            _errorMessage = $"The ChatHistory is null.";
-            return;
-        }
-
-        IChatHistoryReducer? reducer = null;
-        if (_reductionType == "truncation")
-        {
-            reducer = new ChatHistoryTruncationReducer(2);
-        }
-        else if (_reductionType == "summarization")
-        {
-            if (_chatService is null)
+            if (_chatHistory is null)
             {
-                _errorMessage = $"Cannot use Summarization to reduce chat history as the ChatService is null.";
+                _errorMessage = $"The ChatHistory is null.";
                 return;
             }
-            reducer = new ChatHistorySummarizationReducer(_chatService, 2);
-        }
 
-        if (reducer is null)
-        {
-            _errorMessage = $"A ChatHistory Reducer was not properly configured.";
-            return;
+            _thinking = true;
+            IChatHistoryReducer? reducer = null;
+            if (_reductionType == "truncation")
+            {
+                reducer = new ChatHistoryTruncationReducer(2);
+            }
+            else if (_reductionType == "summarization")
+            {
+                if (_chatService is null)
+                {
+                    _errorMessage = $"Cannot use Summarization to reduce chat history as the ChatService is null.";
+                    return;
+                }
+                reducer = new ChatHistorySummarizationReducer(_chatService, 2);
+            }
+
+            if (reducer is null)
+            {
+                _errorMessage = $"A ChatHistory Reducer was not properly configured.";
+                return;
+            }
+            var reducedHistory = await reducer!.ReduceAsync(_chatHistory);
+            if (reducedHistory is not null)
+            {
+                _chatHistory = new ChatHistory(reducedHistory);
+                _showReductionOption = false;
+            }
+            _thinking = false;
+
         }
-        var reducedHistory = await reducer!.ReduceAsync(_chatHistory);
-        if (reducedHistory is not null)
+        catch (Exception ex)
         {
-            _chatHistory = new ChatHistory(reducedHistory);
-            _showReductionOption = false;
+            Console.WriteLine($"****** \nEXCEPTION: {ex.Message}\n******");
+            _errorMessage = ex.Message;
+            _thinking = false;
         }
     }
 
