@@ -7,10 +7,12 @@
         public string? Type { get; set; }     // "type": "llm",
         public string? Publisher { get; set; }    // "publisher": "lmstudio-community",
         public string? Arch { get; set; }     // "arch": "phi3",
-        public string? CompatibilityType { get; set; }     //"compatibility_type": "gguf",
+        public string? Compatibility_Type { get; set; }     //"compatibility_type": "gguf",
         public string? Quantization { get; set; }     // "quantization": "Q4_K_M",
         public string? State { get; set; }    // "state": "loaded",
-        public float MaxContentLength { get; set; }     // "max_context_length": 16384,
-        public float LoadedContextLength { get; set; }  // "loaded_context_length": 4096
+        public float Max_Context_Length { get; set; }     // "max_context_length": 16384,
+        public float Loaded_Context_Length { get; set; }  // "loaded_context_length": 4096
+
+        public List<string>? Capabilities { get; set; }
     }
 }

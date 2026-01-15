@@ -21,8 +21,8 @@
         };
 
         // LM STUDIO
-        public const string LMStudio_LocalModelId_gpt_oss_20b = "gpt-oss-20b";
-        public const string LMStudio_LocalModelId_ministral_3_14b_reasoning = "ministral-3-14b-reasoning";
+        public const string LMStudio_LocalModelId_gpt_oss_20b = "openai/gpt-oss-20b";
+        public const string LMStudio_LocalModelId_ministral_3_14b_reasoning = "mistralai/ministral-3-14b-reasoning";
         public const string LMStudio_LocalModelId_phi4 = "phi-4";
         public const string LMStudio_LocalModelId_llama3_2 = "llama-3.2-3b-instruct";
         public static List<string> LMStudio_TextModels = new List<string>

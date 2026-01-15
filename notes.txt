@@ -21,3 +21,20 @@ USER SECRETS IN CLIENT
 
 GIT
     Master first commit - basic chat layout, model provider as an option in configuration in Program.cs
+
+LMStudio Model DTO
+{
+  "Id": "openai/gpt-oss-20b",
+  "Object": "model",
+  "Type": "llm",
+  "Publisher": "openai",
+  "Arch": "gpt-oss",
+  "Compatibility_Type": "gguf",
+  "Quantization": "MXFP4",
+  "State": "loaded",
+  "Max_Context_Length": 131072,
+  "Loaded_Context_Length": 4096,
+  "Capabilities": [
+    "tool_use"
+  ]
+}

@@ -1,13 +1,14 @@
 ﻿using SemanticAgents.Abstractions;
 using SemanticAgents.Client.Utility;
 using SemanticAgents.SemanticKernelDTOs;
+using System.Text.Json;
 
 namespace SemanticAgents.SemanticKernelLocalHttpClients
 {
     public class LMStudioHttpProvider : ILMStudioHttpProvider
     {
         private readonly IHttpClientFactory _httpClientFactory;
-
+        
         public LMStudioHttpProvider(IHttpClientFactory httpClientFactory)
         {
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
