@@ -1,0 +1,615 @@
+﻿@page "/openApi/productsChatV3"
+@rendermode InteractiveServer
+@using Microsoft.Extensions.AI
+@using Microsoft.Extensions.Options
+@using Microsoft.SemanticKernel
+@using Microsoft.SemanticKernel.ChatCompletion
+@using Microsoft.SemanticKernel.Connectors.OpenAI
+@using SemanticAgents.Abstractions
+@using SemanticAgents.Client.Abstractions
+@using SemanticAgents.Configuration
+@using SemanticAgents.SemanticKernelDTOs
+@using SemanticAgents.SemanticKernelLocalHttpClients
+@using Microsoft.SemanticKernel.Plugins.OpenApi
+@implements IDisposable
+
+<PageTitle>Products Chat</PageTitle>
+
+<div class="row">
+    <div class="col-6">
+        <h4>Query Products API</h4>
+    </div>
+    @if (!string.IsNullOrWhiteSpace(_textModelId) && !string.IsNullOrWhiteSpace(_configuredModelProvider))
+    {
+        <div class="col-6">
+            <p class="mx-0 my-0 text-secondary-alt text-sm-end">
+                <i class="bi-lightning-charge-fill"></i>
+
+                <b><i>&nbsp; LLM: @_textModelId &nbsp;  &nbsp;  Provider: @_configuredModelProvider</i></b>
+
+            </p>
+        </div>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(_errorMessage))
+{
+    <div class="alert alert-danger mt-2" role="alert">
+        @_errorMessage
+    </div>
+    <a class="btn button-custom-success form-control mt-2" @onclick="ClearErrorMessage">Clear</a>
+}
+
+
+<div class="row mt-2">
+    @if (_chatHistory is null)
+    {
+        <div class="col-2">
+            <a class="btn button-custom-primary form-control" @onclick="InitializeChat">Initialize Chat</a>
+        </div>
+    }
+    else
+    {
+        <div class="col-2">
+            <a class="btn button-custom-primary form-control" @onclick="InitailizeChatHistory">Reset Chat</a>
+        </div>
+        <div class="col-2">
+            @if (_loadedLMStudioModelDTO is not null)
+            {
+                <a class="btn button-custom-yellow form-control" @onclick="ShowLoadedLMStudioModel">Model Info</a>
+            }
+        </div>
+        <div class="col-2">
+            @if (_chatHistory.Count > 1)
+            {
+                <btn class="btn button-custom-warning form-control" @onclick="CheckIfCancellationTokenExists">Check CTS</btn>
+            }
+        </div>
+        <div class="col-1 text-end">
+            <p class="mt-2">History :</p>
+        </div>
+        <div class="col-1">
+            <input type="number" class="bg-dark text-light form-control mt-1" @bind-value="_chatHistoryCount" />
+        </div>
+        @if (_chatHistory.Count > _reductionThreshold)
+        {
+            <div class="col-2">
+                <a class="btn button-custom-warning form-control" @onclick="ReduceChatHistory">Reduce</a>
+            </div>
+
+            <div class="col-2 text-center">
+                <select class="bg-dark text-light form-select mt-1" @bind="_reductionType">
+                    @foreach (var type in _reductionTypesList)
+                    {
+                        <option value=@type>@type</option>
+                    }
+                </select>
+            </div>
+        }
+    }
+</div>
+
+@if (_chatHistory is not null)
+{
+    <div class="row">
+        <div class="col-8">
+            @* LEFT COLUMN - CHAT HISTORY *@
+            <div class="row mt-2">
+                <label for="userMessage" class="form-label">Your Message:</label>
+                <textarea rows="4" class="bg-dark text-light form-control" id="userMessage"
+                          @bind="_userMessage" @bind:after="SubmitUserMessage" @onfocus="ClearUserMessage" />
+            </div>
+            <div class="row mt-2">
+                <div class="col-4 offset-4">
+                    @if (_processingUserRequest)
+                    {
+                        <btn class="btn button-custom-danger form-control" @onclick="CancelRequest">Cancel</btn>
+                    }
+                    else
+                    {
+                        <btn class="btn button-custom-success form-control" @onclick="SubmitUserMessage">Submit</btn>
+                    }
+                </div>
+            </div>
+            @if (_showChatHistory)
+            {
+                <div class="row mt-2">
+                    <label for="historyList" class="form-label">History:</label>
+                    <textarea rows="12" class="bg-dark text-light form-control" id="historyList" @bind="_messageHistoryList" />
+                </div>
+            }
+            else
+            {
+                <div class="row mt-2">
+                    <label for="assistantMessage" class="form-label">Assistant Message:</label>
+                    <textarea rows="12" class="bg-dark text-light form-control" id="assistantMessage" @bind="_assistantMessage" />
+                </div>
+            }
+            <div class="row mt-2">
+                <div class="col-4 offset-4">
+                    <btn class="btn button-custom-success form-control" @onclick="ToggleShowChatHistory">@_showChatHistoryButtonText</btn>
+                </div>
+            </div>
+        </div>
+        <div class="col-3 offset-1">
+            @* RIGHT COLUMN - PROMPT EXECUTION SETTINGS *@
+
+            @if (_promptExecutionSettings is not null)
+            {
+                <br />
+                <h5 class="text-info-alt mt-2">Prompt Execution Settings:</h5>
+                <div class="row">
+                    <div class="col-6">
+                        <label class="label" for="maxtokens">Max Tokens:</label>
+                    </div>
+                    <div class="col-6">
+                        <input type="number" class="form-control bg-dark text-light " id="maxtokens"
+                               @bind-value="@_promptExecutionSettings.MaxTokens" />
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <label class="label" for="useTopP">Use Top P:</label>
+                    </div>
+                    <div class="col-6">
+                        <InputCheckbox class="form-check-input bg-dark text-light " id="useTopP" @bind-value="@_useTopP" />
+                    </div>
+                </div>
+                @if (_useTopP)
+                {
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <label class="label" for="topp">Top P:</label>
+                        </div>
+                        <div class="col-6">
+                            <input type="number" class="form-control bg-dark text-light " id="topp"
+                                   @bind-value="@_promptExecutionSettings.TopP" />
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <label class="label" for="temp">Temperature:</label>
+                        </div>
+                        <div class="col-6">
+                            <input type="number" class="form-control bg-dark text-light " id="temp"
+                                   @bind-value="@_promptExecutionSettings.Temperature" />
+                        </div>
+                    </div>
+                }
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <label class="label" for="freqpen">Frequency Penalty:</label>
+                    </div>
+                    <div class="col-6">
+                        <input type="number" class="form-control bg-dark text-light " id="freqpen"
+                               @bind-value="@_promptExecutionSettings.FrequencyPenalty" />
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <label class="label" for="prespen">Presence Penalty:</label>
+                    </div>
+                    <div class="col-6">
+                        <input type="number" class="form-control bg-dark text-light " id="prespen"
+                               @bind-value="@_promptExecutionSettings.PresencePenalty" />
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <label class="label" for="tool">Tool Call Behavior:</label>
+                    </div>
+                    <div class="col-6">
+                        <select type="text" class="form-select bg-dark text-light " id="tool"
+                                @bind="@_toolCallBehaviorString" @bind:after="OnToolCallBehaviorStringChange">
+                            <option value="Auto Invoke">Auto Invoke</option>
+                            <option value="Enable">Enable</option>
+                        </select>
+
+                    </div>
+                </div>
+                @if (_thinking)
+                {
+                    <br />
+                    <br />
+                    <div class="row">
+                        <div class="col-12 text-center">
+                            <p class="text-yellow-alt"><i>... processing ...</i></p>
+                        </div>
+                    </div>
+                    <div class="mx-auto text-center mb-3 mt-3">
+                        <div class="spinner-border text-yellow-alt role-status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                }
+            }
+
+        </div>
+    </div>
+}
+
+@if (_loadingConfiguration)
+{
+    <div class="row mt-2">
+        <div class="col-12">
+            <p class="text-yellow-alt"><i>Validating LLM Configuration ...</i></p>
+        </div>
+    </div>
+    <div class="mx-auto text-center mb-3 mt-3" style="height:160px;">
+        <div class="spinner-border text-yellow-alt role-status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+
+@if (_showLMStudioModel && _loadedLMStudioModelDTO is not null)
+{
+    <LoadedModelModal ModelDTO="_loadedLMStudioModelDTO" ModalTitle="Loaded Model" Capabilities="@_loadedModelCapabilities"
+                      Cancel="HideLoadedLMStudioModel" CancelButtonTitle="Close" />
+}
+
+@code {
+
+    private Kernel? _kernel { get; set; } = default!;
+    [Inject]
+    private IOptions<SemanticKernelSettings> _semanticKernelSettings { get; set; } = default!;
+    [Inject]
+    private IToastrService _toastr { get; set; } = default!;
+    [Inject]
+    private ILMStudioHttpProvider _lmStudioHttpProvider { get; set; } = default!;
+
+    // Model state information
+    #region Model State Information
+    private string? _configuredModelProvider;
+    private string? _textModelId { get; set; }
+    private LMStudioModelDTO? _loadedLMStudioModelDTO;
+    private string? _loadedModelCapabilities;
+    // private string? _loadedModelId;
+    private bool _showLMStudioModel;
+    private void ShowLoadedLMStudioModel()
+    {
+        if (_loadedLMStudioModelDTO is null) return;
+        // await Toastr.ShowToastrSuccess($"The loaded model is NOT null!!!");
+        _showLMStudioModel = true;
+    }
+    private void HideLoadedLMStudioModel()
+    {
+        _showLMStudioModel = false;
+    }
+    #endregion Model State Information
+
+    // User message handling and information
+    #region Messages and Information
+    private bool _thinking = false;
+    private bool _loadingConfiguration = false;
+    private bool _processingUserRequest = false;
+    private string? _userMessage;
+    private string? _errorMessage;
+    private void ClearUserMessage() => _userMessage = string.Empty;
+    private void ClearErrorMessage() => _errorMessage = null;
+    #endregion Messages and Information
+
+    // Chat parameters
+    #region Chat Parameters
+    private IChatCompletionService? _chatService;
+    private ChatHistory? _chatHistory;
+    private string? _assistantMessage = string.Empty;
+    private string? _messageHistoryList;
+    private int _chatHistoryCount = 0;
+    private bool _showReductionOption;
+    private int _reductionThreshold = 6;
+    private bool _showChatHistory;
+    private string _showChatHistoryButtonText = "Show Chat History";
+    private void ToggleShowChatHistory()
+    {
+        _showChatHistory = !_showChatHistory;
+        if (_showChatHistory) _showChatHistoryButtonText = "Hide Chat History";
+        else _showChatHistoryButtonText = "Show Chat History";
+    }
+    private bool _useTopP = false;
+    private OpenAIPromptExecutionSettings? _promptExecutionSettings = new()
+    {
+        MaxTokens = 4000,
+        Temperature = 0.7,
+        TopP = 0.95,
+        FrequencyPenalty = 0,
+        PresencePenalty = 0,
+        ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
+    };
+    private string _toolCallBehaviorString = "Auto Invoke";
+    private void OnToolCallBehaviorStringChange()
+    {
+        if (_promptExecutionSettings is null)
+        {
+            _errorMessage = $"Prompt Execution Settings are not configured.";
+            return;
+        }
+        if (_toolCallBehaviorString == "Auto Invoke") _promptExecutionSettings.ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions;
+        else if (_toolCallBehaviorString == "Enable") _promptExecutionSettings.ToolCallBehavior = ToolCallBehavior.EnableKernelFunctions;
+    }
+    #endregion Chat Parameters
+
+    // Cancellation token handling
+    #region Cancellation Token Handling
+    private CancellationTokenSource? _cancellationTokenSource;
+    private async Task CancelRequest()
+    {
+        if (_cancellationTokenSource is null) return;
+        await _cancellationTokenSource.CancelAsync();
+        _cancellationTokenSource.Dispose();
+    }
+    private async Task CheckIfCancellationTokenExists()
+    {
+        if (_cancellationTokenSource is null) await _toastr.ShowToastrInfo($"The CancellationTokenSource IS NULL.");
+        else await _toastr.ShowToastrInfo($"The CancellationTokenSource EXISTS.");
+    }
+    #endregion Cancellation Token Handling
+
+    #region Configuring Kernel and Chat
+    private async Task InitializeChat()
+    {
+        _loadingConfiguration = true;
+        await InstantiateKernelAsync();
+        await ConfigureKernelPluginsAsync();
+        InitailizeChatHistory();
+        _loadingConfiguration = false;
+    }
+
+    // Supporting methods for InitializeChat()
+    private async Task InstantiateKernelAsync()
+    {
+        _loadingConfiguration = true;
+
+        // Get Text Model Id from a running LMStudio instance
+        _textModelId = await GetLMStudioStateAsync();
+        string? providerEndpoint = _semanticKernelSettings?.Value.LMStudio_Endpoint;
+        string? apiKey = null;
+
+        if (string.IsNullOrWhiteSpace(_textModelId) || string.IsNullOrWhiteSpace(providerEndpoint))
+        {
+            _textModelId = _semanticKernelSettings?.Value.OpenAI_TextModelId;
+            apiKey = _semanticKernelSettings?.Value.OpenAI_ApiKey;
+
+            if (string.IsNullOrWhiteSpace(_textModelId) || string.IsNullOrWhiteSpace(apiKey))
+            {
+                _errorMessage = $"A model provider could not be configured. Please check the values set in the SemanticKernelSettings configuration.";
+                return;
+            }
+            else _configuredModelProvider = "OpenAI";
+        }
+        else _configuredModelProvider = "LMStudio";
+
+        _kernel = Kernel.CreateBuilder()
+            .AddOpenAIChatCompletion(
+                        modelId: _textModelId,
+                        apiKey: apiKey,
+                        endpoint: string.IsNullOrWhiteSpace(providerEndpoint) ? null! : new Uri(providerEndpoint))
+            .Build();
+
+        _loadingConfiguration = false;
+        await _toastr.ShowToastrSuccess($"Kernel configured with Model {_textModelId} from Provider {_configuredModelProvider}.");
+    }
+
+    private async Task<string?> GetLMStudioStateAsync()
+    {
+        if (_lmStudioHttpProvider is null)
+        {
+            _errorMessage = $"The LMStudio Http Provider is null";
+            return null;
+        }
+
+        var result = await _lmStudioHttpProvider.GetLMStudioLoadedModelsAsync();
+        if (result.IsSuccess)
+        {
+            List<LMStudioModelDTO>? loadedModels = result.LoadedModels?.ToList();
+            if (loadedModels is not null && loadedModels.Any())
+            {
+                _loadedLMStudioModelDTO = loadedModels.FirstOrDefault(m => m.State == "loaded");
+                if (_loadedLMStudioModelDTO is not null)
+                {
+                    if (_loadedLMStudioModelDTO.Capabilities is not null) _loadedModelCapabilities = string.Join(", ", _loadedLMStudioModelDTO.Capabilities);
+                    return _loadedLMStudioModelDTO.Id;
+                }
+                else
+                {
+                    _errorMessage = "Please check LM Studio configuration. A text model was not loaded.";
+                }
+            }
+        }
+        else _errorMessage = result.ErrorMessage;
+
+        _thinking = false;
+        return null;
+    }
+
+    private async Task ConfigureKernelPluginsAsync()
+    {
+        if (_kernel is not null)
+        {
+            await _kernel.ImportPluginFromOpenApiAsync(
+                pluginName: "products",
+                uri: new Uri("https://localhost:7152/openapi/v1.json"),
+                executionParameters: new OpenApiFunctionExecutionParameters() { EnablePayloadNamespacing = true }
+            );
+
+            // _kernel.ImportPluginFromType<TimePlugin>();
+        }
+    }
+
+    private void InitailizeChatHistory()
+    {
+        _chatHistory = new ChatHistory();   // just using Clear() not working well.
+        _chatHistory.AddSystemMessage("You are a helpful assistant who has access to a collection of ProductDTOs using the plugin " +
+            "with the pluginName \'products\'. ProductDTOs are equevalent to Products.  Any reference to the term Products in user messages " +
+            "or Function descriptions should be considered to refer to ProductDTOs. Any reference to an Image should be understood to refer " +
+            "to an ImageDataDTO.  Any reference to a Document should be understood to refer to a DocumentDataDTO.");
+        _userMessage = string.Empty;
+        _assistantMessage = string.Empty;
+        _messageHistoryList = string.Empty;
+        _chatHistoryCount = _chatHistory.Count;
+    }
+    #endregion Configuring Kernel and Chat
+
+    #region Message Submission and Handling
+    private async Task SubmitUserMessage()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(_userMessage)) { _errorMessage = "Please enter a message."; return; }
+
+            ValidatePromptExecutionSettings();
+            if (!string.IsNullOrEmpty(_errorMessage)) return;
+
+            using (_cancellationTokenSource = new CancellationTokenSource())
+            {
+                _thinking = true;
+                _processingUserRequest = true;
+                _chatHistory!.AddUserMessage(_userMessage);
+                _messageHistoryList += $"USER: {_userMessage}\n\n";
+                _assistantMessage = string.Empty;
+
+                _chatService = _kernel?.GetRequiredService<IChatCompletionService>();
+
+                // // OPTION 1: NON-STREAMING
+                // ChatMessageContent assistantContent = await _chatService!.GetChatMessageContentAsync(_chatHistory!, _promptExecutionSettings, _kernel);
+                // _messageHistoryList += ($"{assistantContent.Content}\n\n");
+                // if (assistantContent.Content is not null) _chatHistory.AddAssistantMessage(assistantContent.Content);
+                // _userMessage = string.Empty;
+
+                // OPTION 2: STREAMING
+                await foreach (StreamingChatMessageContent chunk in _chatService!.GetStreamingChatMessageContentsAsync(
+                    _chatHistory, _promptExecutionSettings, _kernel, _cancellationTokenSource.Token))
+                {
+                    _assistantMessage += chunk.Content;
+                    if (_cancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        Console.WriteLine("Breaking out of streaming loop - the Operation has been cancelled by user.");
+                        _assistantMessage += $"\nOperation cancelled by user.";
+                        break;
+                    }
+                }
+
+                _messageHistoryList += ($"ASSISTANT: {_assistantMessage}\n\n");
+                if (_assistantMessage is not null) _chatHistory.AddAssistantMessage(_assistantMessage);
+                // _userMessage = string.Empty; // Note: _userMessage is cleared with 'onfocus' event on the html input textarea element
+                _chatHistoryCount = _chatHistory.Count;
+                if (_chatHistory.Count >= _reductionThreshold) _showReductionOption = true;
+                _thinking = false;
+                _processingUserRequest = false;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            await _toastr.ShowToastrInfo($"OPERATION CANCELLED EXCEPTION: Operation cancelled by user.");
+            Console.WriteLine("Operation Canceled Exception: Operation cancelled by user.");
+            _assistantMessage += $"\nOperation cancelled by user.";
+            _thinking = false;
+            _processingUserRequest = false;
+        }
+        // catch (Exception ex)
+        // {
+        //     await _toastr.ShowToastrError($"EXCEPTION: {ex.Message}");
+        //     Console.WriteLine($"****** \nEXCEPTION: {ex.Message}\n******");
+        //     _errorMessage = ex.Message;
+        //     _thinking = false;
+        //     _processingUserRequest = false;
+        // }
+    }
+
+    // Supporting methods for SubmitUserMessage()
+    private void ValidatePromptExecutionSettings()
+    {
+        if (_promptExecutionSettings is null) _errorMessage = $"Prompt Execution Settings are not accessible.";
+        else
+        {
+            if (_promptExecutionSettings.MaxTokens <= 0) _promptExecutionSettings.MaxTokens = 4000;
+            if (_promptExecutionSettings.FrequencyPenalty < -2.0) _promptExecutionSettings.FrequencyPenalty = -2.0;
+            if (_promptExecutionSettings.FrequencyPenalty > 2.0) _promptExecutionSettings.FrequencyPenalty = 2.0;
+            if (_promptExecutionSettings.PresencePenalty < -2.0) _promptExecutionSettings.PresencePenalty = -2.0;
+            if (_promptExecutionSettings.PresencePenalty > 2.0) _promptExecutionSettings.PresencePenalty = 2.0;
+            if (_promptExecutionSettings.Temperature < 0) _promptExecutionSettings.Temperature = 0;
+            if (_promptExecutionSettings.Temperature > 1.0) _promptExecutionSettings.Temperature = 1.0;
+            if (_promptExecutionSettings.TopP < 0) _promptExecutionSettings.TopP = 0;
+            if (_promptExecutionSettings.TopP > 1.0) _promptExecutionSettings.TopP = 1.0;
+        }
+    }
+    #endregion Message Submission and Handling
+
+    // Chat History Reduction
+    #region Chat History Reduction
+    // Note: _messageHistoryList does not include the system message while _chatHistory does
+    private List<string> _reductionTypesList = new List<string>() { "truncation", "summarization" };
+    private string _reductionType = "truncation";
+    private async Task ReduceChatHistory()
+    {
+        Console.WriteLine($"ReduceChatHistory called with reduction type {_reductionType}");
+
+        try
+        {
+            if (_chatHistory is null)
+            {
+                _errorMessage = $"The ChatHistory is null.";
+                return;
+            }
+
+            _thinking = true;
+
+            int initialChatCount = _chatHistory.Count;
+
+            IChatHistoryReducer? reducer = null;
+            if (_reductionType == "truncation")
+            {
+                reducer = new ChatHistoryTruncationReducer(2);
+            }
+            else if (_reductionType == "summarization")
+            {
+                if (_chatService is null)
+                {
+                    _errorMessage = $"Cannot use Summarization to reduce chat history as the ChatService is null.";
+                    return;
+                }
+                reducer = new ChatHistorySummarizationReducer(_chatService, 2);
+            }
+
+            if (reducer is null)
+            {
+                _errorMessage = $"A ChatHistory Reducer was not properly configured.";
+                return;
+            }
+            IEnumerable<ChatMessageContent>? reducedHistory = await reducer!.ReduceAsync(_chatHistory);
+            if (reducedHistory is not null)
+            {
+                _chatHistory = new ChatHistory(reducedHistory);
+                _showReductionOption = false;
+            }
+            _thinking = false;
+            _chatHistoryCount = _chatHistory.Count;
+            _messageHistoryList = string.Empty;
+            foreach (var message in _chatHistory)
+            {
+                if (message.Role == AuthorRole.User) _messageHistoryList += ($"USER: {message.Content}\n\n");
+                else if (message.Role == AuthorRole.Assistant) _messageHistoryList += ($"ASSISTANT: {_assistantMessage}\n\n");
+            }
+
+            _showReductionOption = false;
+            await _toastr.ShowToastrSuccess($"Chat history reduced from {initialChatCount} messages to {_chatHistory.Count} " +
+            $"messages using {_reductionType} reduction.");
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"****** \nEXCEPTION: {ex.Message}\n******");
+            _errorMessage = ex.Message;
+            _thinking = false;
+        }
+    }
+    #endregion Chat History Reduction
+
+    public void Dispose()
+    {
+        if (_cancellationTokenSource is not null) _cancellationTokenSource.Dispose();
+    }
+}

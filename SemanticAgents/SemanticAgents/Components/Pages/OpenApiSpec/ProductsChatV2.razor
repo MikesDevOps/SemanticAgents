@@ -1,4 +1,4 @@
-﻿@page "/openApi/productsChat"
+﻿@page "/openApi/productsChatV2"
 @rendermode InteractiveServer
 @using Microsoft.Extensions.Options
 @using Microsoft.SemanticKernel
@@ -18,31 +18,18 @@
     <div class="col-6">
         <h4>Query Products API</h4>
     </div>
-    <div class="col-6">
-        <p class="mx-0 my-0 text-secondary-alt text-sm-end">
-            <i class="bi-lightning-charge-fill"></i>
-            @if (!string.IsNullOrWhiteSpace(_kernelInfo?.LoadedModelId))
-            {
-                <b><i>&nbsp; LLM: @_kernelInfo?.LoadedModelId &nbsp;  &nbsp;  Provider: @_kernelInfo?.ModelProvider</i></b>
-            }
-            else
-            {
-                <b><i>&nbsp; LLM Provider: @_kernelInfo?.ModelProvider</i></b>
-            }
-        </p>
-    </div>
+    @if (!string.IsNullOrWhiteSpace(_textModelId) && !string.IsNullOrWhiteSpace(_configuredModelProvider))
+    {
+        <div class="col-6">
+            <p class="mx-0 my-0 text-secondary-alt text-sm-end">
+                <i class="bi-lightning-charge-fill"></i>
+
+                <b><i>&nbsp; LLM: @_textModelId &nbsp;  &nbsp;  Provider: @_configuredModelProvider</i></b>
+
+            </p>
+        </div>
+    }
 </div>
-
-@if (_configuredModelProvider == "OpenAI" || _configuredModelProvider == "Grok")
-{
-    <RemoteModelConfiguration ConfiguredModelProvider="@_configuredModelProvider" ModelIdLoadedCallback="SetSemanticKernelInfoLoadedModelId"></RemoteModelConfiguration>
-}
-else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "Ollama")
-{
-    <LocalModelConfiguration ConfiguredModelProvider="@_configuredModelProvider" ModelIdLoadedCallback="SetSemanticKernelInfoLoadedModelId"></LocalModelConfiguration>
-}
-
-@* BODY *@
 
 @if (!string.IsNullOrEmpty(_errorMessage))
 {
@@ -52,40 +39,56 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
     <a class="btn button-custom-success form-control mt-2" @onclick="ClearErrorMessage">Clear</a>
 }
 
-<div class="row mt-2">
-    @if (!string.IsNullOrWhiteSpace(_kernelInfo?.LoadedModelId))
-    {
-        @* <h5 class="mt-2">Query Products API</h5> *@
+@if (_loadedLMStudioModel is not null)
+{
+    <div class="row mt-2">
         <div class="col-2">
-            @if (_chatHistory is null)
-            {
-                <a class="btn button-custom-primary form-control" @onclick="InitializeChat">Start Chat</a>
-            }
-            else
-            {
-                <a class="btn button-custom-primary form-control" @onclick="ResetChat">Reset Chat</a>
-            }
+            <h5 class="mt-2">Loaded Model:</h5>
         </div>
-        <div class="col-2 offset-1">
-            <btn class="btn button-custom-primary form-control" @onclick="CheckIfCancellationTokenExists">Check CTS</btn>
+        <div class="col-3">
+            <input inert type="text" class="bg-dark text-light form-control mt-1" @bind-value="_loadedLMStudioModel.Id" />
         </div>
-        @if (_showReductionOption)
+        @if (_loadedLMStudioModel is not null)
         {
-            <div class="col-2 offset-1">
-                <a class="btn button-custom-warning form-control" @onclick="ReduceChatHistory">Reduce History</a>
-            </div>
-            <div class="col-1">
-                <p class="mt-2">Reduction:</p>
-            </div>
-            <div class="col-2 text-center">
-                <select class="bg-dark text-light form-select mt-1" @bind="_reductionType">
-                    @foreach (var type in _reductionTypesList)
-                    {
-                        <option value=@type>@type</option>
-                    }
-                </select>
+            <div class="col-2">
+                <a class="btn button-custom-yellow form-control" @onclick="ShowLoadedLMStudioModel">Model Info</a>
             </div>
         }
+    </div>
+
+    <hr />
+}
+
+<div class="row mt-2">
+    <div class="col-2">
+        @if (_chatHistory is null)
+        {
+            <a class="btn button-custom-primary form-control" @onclick="InitializeChat">Start Chat</a>
+        }
+        else
+        {
+            <a class="btn button-custom-warning form-control" @onclick="ResetChat">Reset Chat</a>
+        }
+    </div>
+    <div class="col-2 offset-1">
+        <btn class="btn button-custom-primary form-control" @onclick="CheckIfCancellationTokenExists">Check CTS</btn>
+    </div>
+    @if (_showReductionOption)
+    {
+        <div class="col-2 offset-1">
+            <a class="btn button-custom-warning form-control" @onclick="ReduceChatHistory">Reduce History</a>
+        </div>
+        <div class="col-1">
+            <p class="mt-2">Reduction:</p>
+        </div>
+        <div class="col-2 text-center">
+            <select class="bg-dark text-light form-select mt-1" @bind="_reductionType">
+                @foreach (var type in _reductionTypesList)
+                {
+                    <option value=@type>@type</option>
+                }
+            </select>
+        </div>
     }
 </div>
 
@@ -140,22 +143,22 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
             <h5 class="text-info-alt mt-2">Prompt Execution Settings:</h5>
             @if (_promptExecutionSettings is not null)
             {
-                    <br />
-                    <div class="row">
-                        <div class="col-6">
-                            <label class="label" for="maxtokens">Max Tokens:</label>
-                        </div>
-                        <div class="col-6">
-                            <input type="number" class="form-control bg-dark text-light " id="maxtokens"
-                            @bind-value="@_promptExecutionSettings.MaxTokens" />
-                        </div>
+                <br />
+                <div class="row">
+                    <div class="col-6">
+                        <label class="label" for="maxtokens">Max Tokens:</label>
                     </div>
+                    <div class="col-6">
+                        <input type="number" class="form-control bg-dark text-light " id="maxtokens"
+                               @bind-value="@_promptExecutionSettings.MaxTokens" />
+                    </div>
+                </div>
                 <div class="row mt-2">
                     <div class="col-6">
                         <label class="label" for="useTopP">Use Top P:</label>
                     </div>
                     <div class="col-6">
-                        <InputCheckbox class="form-check bg-dark text-light " id="useTopP" @bind-value="@_useTopP"/>
+                        <InputCheckbox class="form-check bg-dark text-light " id="useTopP" @bind-value="@_useTopP" />
                     </div>
                 </div>
                 @if (_useTopP)
@@ -166,7 +169,7 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
                         </div>
                         <div class="col-6">
                             <input type="number" class="form-control bg-dark text-light " id="topp"
-                            @bind-value="@_promptExecutionSettings.TopP" />
+                                   @bind-value="@_promptExecutionSettings.TopP" />
                         </div>
                     </div>
                 }
@@ -178,46 +181,59 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
                         </div>
                         <div class="col-6">
                             <input type="number" class="form-control bg-dark text-light " id="temp"
-                            @bind-value="@_promptExecutionSettings.Temperature" />
+                                   @bind-value="@_promptExecutionSettings.Temperature" />
                         </div>
                     </div>
-                    }
-                    <div class="row mt-2">
-                        <div class="col-6">
-                            <label class="label" for="freqpen">Frequency Penalty:</label>
-                        </div>
-                        <div class="col-6">
-                            <input type="number" class="form-control bg-dark text-light " id="freqpen"
-                            @bind-value="@_promptExecutionSettings.FrequencyPenalty" />
-                        </div>
+                }
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <label class="label" for="freqpen">Frequency Penalty:</label>
                     </div>
-                    <div class="row mt-2">
-                        <div class="col-6">
-                            <label class="label" for="prespen">Presence Penalty:</label>
-                        </div>
-                        <div class="col-6">
-                            <input type="number" class="form-control bg-dark text-light " id="prespen"
-                            @bind-value="@_promptExecutionSettings.PresencePenalty" />
-                        </div>
+                    <div class="col-6">
+                        <input type="number" class="form-control bg-dark text-light " id="freqpen"
+                               @bind-value="@_promptExecutionSettings.FrequencyPenalty" />
                     </div>
-                    <div class="row mt-2">
-                        <div class="col-6">
-                            <label class="label" for="tool">Tool Call Behavior:</label>
-                        </div>
-                        <div class="col-6">
-                            <select type="text" class="form-select bg-dark text-light " id="tool" 
+                </div>
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <label class="label" for="prespen">Presence Penalty:</label>
+                    </div>
+                    <div class="col-6">
+                        <input type="number" class="form-control bg-dark text-light " id="prespen"
+                               @bind-value="@_promptExecutionSettings.PresencePenalty" />
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <label class="label" for="tool">Tool Call Behavior:</label>
+                    </div>
+                    <div class="col-6">
+                        <select type="text" class="form-select bg-dark text-light " id="tool"
                                 @bind="@_toolCallBehaviorString" @bind:after="OnToolCallBehaviorStringChange">
-                                <option value="Auto Invoke">Auto Invoke</option>
-                                <option value="Enable">Enable</option>
-                            </select>
+                            <option value="Auto Invoke">Auto Invoke</option>
+                            <option value="Enable">Enable</option>
+                        </select>
 
-                        </div>
                     </div>
-                    <br />
+                </div>
+                <br />
             }
         </div>
     </div>
-    
+}
+
+@if (_loadingConfiguration)
+{
+    <div class="row mt-2">
+        <div class="col-12">
+            <p class="text-yellow-alt"><i>Validating LLM Configuration ...</i></p>
+        </div>
+    </div>
+    <div class="mx-auto text-center mb-3 mt-3" style="height:160px;">
+        <div class="spinner-border text-yellow-alt role-status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
 }
 
 @if (_thinking)
@@ -230,36 +246,30 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
     </div>
 }
 
+@if (_showLoadedModel && _loadedLMStudioModel is not null)
+{
+    <LoadedModelModal ModelDTO="_loadedLMStudioModel" ModalTitle="Loaded Model" Capabilities="@_loadedModelCapabilities"
+                      Cancel="HideLoadedLMStudioModel" CancelButtonTitle="Close" />
+}
+
 @code {
 
-    [CascadingParameter(Name = "SemanticKernelInfo")]      // Root level cascading parameter
-    private SemanticKernelInfo? _kernelInfo { get; set; }
-    [Inject]
-    private Kernel _kernel { get; set; } = default!;
+    // [CascadingParameter(Name = "SemanticKernelInfo")]      // Root level cascading parameter
+    // private SemanticKernelInfo? _kernelInfo { get; set; }
+    // [Inject]
+    private Kernel? _kernel { get; set; } = default!;
     [Inject]
     private IToastrService _toastr { get; set; } = default!;
     [Inject]
     private ILMStudioHttpProvider _lmStudioHttpProvider { get; set; } = default!;
     [Inject]
-    private IOllamaHttpProvider _ollamaHttpProvider { get; set; } = default!;
+    // private IOllamaHttpProvider _ollamaHttpProvider { get; set; } = default!;
+    // [Inject]
 
+    private IOptions<SemanticKernelSettings>? _semanticKernelSettings { get; set; } = default!;
+
+    private string? _textModelId { get; set; }
     private string? _configuredModelProvider;
-    // private string? _configuredTextModelId;
-
-    // private bool _modelIsLoaded;
-
-    private void SetSemanticKernelInfoLoadedModelId(string modelId)
-    {
-        if (_kernelInfo is not null)
-        {
-            _kernelInfo.LoadedModelId = modelId;
-            // await _toastr.ShowToastrSuccess($"Model {_kernelInfo.LoadedModelId} is Loaded!");
-            this.StateHasChanged();
-        }
-    }
-
-
-    // private void SetModelIsLoaded(bool isLoaded) => _modelIsLoaded = isLoaded;
 
     private void ClearUserMessage() => _userMessage = string.Empty;
     private bool _showChatHistory;
@@ -278,7 +288,7 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
         TopP = 0.95,
         FrequencyPenalty = 0,
         PresencePenalty = 0,
-        ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions 
+        ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
     };
 
     private string _toolCallBehaviorString = "Auto Invoke";
@@ -299,6 +309,7 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
     private string? _assistantMessage = string.Empty;
     private string? _messageHistoryList; // = string.Empty;
     private bool _thinking = false;
+    private bool _loadingConfiguration = false;
     private bool _processingUserRequest = false;
     private string? _errorMessage;
     private bool _showReductionOption;
@@ -321,6 +332,42 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
 
     private async Task InitializeChat()
     {
+        _loadingConfiguration = true;
+        string? lmStudioTextModelId = await GetLMStudioLoadedModelData(); // _semanticKernelSettings?.Value.LMStudio_TextModelId;
+        string? lmStudioEndpoint = _semanticKernelSettings?.Value.LMStudio_Endpoint;
+        if (string.IsNullOrWhiteSpace(lmStudioTextModelId) || string.IsNullOrWhiteSpace(lmStudioEndpoint))
+        {
+            // Configure to use OpenAI if LMStudio configuration is not valid
+            string? openAiTextModelId = _semanticKernelSettings?.Value.OpenAI_TextModelId;
+            string? openAiApiKey = _semanticKernelSettings?.Value.OpenAI_ApiKey;
+            if (string.IsNullOrWhiteSpace(openAiTextModelId) || string.IsNullOrWhiteSpace(openAiApiKey))
+            {
+                _errorMessage = $"A model provider could not be configured. Please check the values set in the SemanticKernelSettings configuration.";
+                return;
+            }
+
+            _kernel = Kernel.CreateBuilder()
+                .AddOpenAIChatCompletion(
+                        modelId: openAiTextModelId,
+                        apiKey: openAiApiKey)
+            .Build();
+
+            _configuredModelProvider = "OpenAI";
+            _textModelId = openAiTextModelId;
+
+        }
+        else
+        {
+            _kernel = Kernel.CreateBuilder()
+            .AddOpenAIChatCompletion(
+                        modelId: lmStudioTextModelId,
+                        apiKey: null,
+                        endpoint: new Uri(lmStudioEndpoint))
+            .Build();
+
+            _configuredModelProvider = "LMStudio";
+            _textModelId = lmStudioTextModelId;
+        }
         // Import plugins
         if (_kernel is not null)
         {
@@ -333,6 +380,7 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
             // _kernel.ImportPluginFromType<TimePlugin>();
         }
 
+        _chatService = _kernel?.GetRequiredService<IChatCompletionService>();
         _chatHistory = new ChatHistory();
         _chatHistory.AddSystemMessage("You are a helpful assistant who has access to a collection of ProductDTOs using the plugin " +
             "with the pluginName \'products\'. ProductDTOs are equevalent to Products.  Any reference to the term Products in user messages " +
@@ -341,6 +389,7 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
         _userMessage = string.Empty;
         _assistantMessage = string.Empty;
         _messageHistoryList = string.Empty;
+        _loadingConfiguration = false;
     }
 
     private void ValidatePromptExecutionSettings()
@@ -350,7 +399,7 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
         {
             if (_promptExecutionSettings.MaxTokens <= 0) _promptExecutionSettings.MaxTokens = 4000;
             if (_promptExecutionSettings.FrequencyPenalty < -2.0) _promptExecutionSettings.FrequencyPenalty = -2.0;
-            if ( _promptExecutionSettings.FrequencyPenalty > 2.0) _promptExecutionSettings.FrequencyPenalty = 2.0;
+            if (_promptExecutionSettings.FrequencyPenalty > 2.0) _promptExecutionSettings.FrequencyPenalty = 2.0;
             if (_promptExecutionSettings.PresencePenalty < -2.0) _promptExecutionSettings.PresencePenalty = -2.0;
             if (_promptExecutionSettings.PresencePenalty > 2.0) _promptExecutionSettings.PresencePenalty = 2.0;
             if (_promptExecutionSettings.Temperature < 0) _promptExecutionSettings.Temperature = 0;
@@ -358,6 +407,18 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
             if (_promptExecutionSettings.TopP < 0) _promptExecutionSettings.TopP = 0;
             if (_promptExecutionSettings.TopP > 1.0) _promptExecutionSettings.TopP = 1.0;
         }
+    }
+
+    private bool _showLoadedModel;
+    private void ShowLoadedLMStudioModel()
+    {
+        if (_loadedLMStudioModel is null) return;
+        // await Toastr.ShowToastrSuccess($"The loaded model is NOT null!!!");
+        _showLoadedModel = true;
+    }
+    private void HideLoadedLMStudioModel()
+    {
+        _showLoadedModel = false;
     }
 
     private void ResetChat()
@@ -434,6 +495,56 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
         }
     }
 
+    private LMStudioModelDTO? _loadedLMStudioModel;
+
+    private string? _loadedModelCapabilities;
+    // private string? _loadedModelId;
+    private async Task<string?> GetLMStudioLoadedModelData()
+    {
+        try
+        {
+            // Get Text Model Id specified by configuration
+            //_configuredTextModelId = _semanticKernelSettings.Value.LMStudio_TextModelId;
+
+            if (_lmStudioHttpProvider is null)
+            {
+                _errorMessage = $"The LMStudio Http Provider is null";
+                return null;
+            }
+
+            var result = await _lmStudioHttpProvider.GetLMStudioLoadedModelsAsync();
+            if (result.IsSuccess)
+            {
+                List<LMStudioModelDTO>? loadedModels = result.LoadedModels?.ToList();
+                if (loadedModels is not null && loadedModels.Any())
+                {
+                    _loadedLMStudioModel = loadedModels.FirstOrDefault(m => m.State == "loaded");
+                    if (_loadedLMStudioModel is not null)
+                    {
+                        if (_loadedLMStudioModel.Capabilities is not null) _loadedModelCapabilities = string.Join(", ", _loadedLMStudioModel.Capabilities);
+
+                        await _toastr.ShowToastrSuccess($"LM Studio Model {_loadedLMStudioModel.Id} is loaded.");
+
+                        return _loadedLMStudioModel.Id;
+                    }
+                    else
+                    {
+                        _errorMessage = "Please check LM Studio configuration. A text model was not loaded.";
+                        return null;
+                    }
+                }
+            }
+            else _errorMessage = result.ErrorMessage;
+            _thinking = false;
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+            return null;
+        }
+    }
+
     private List<string> _reductionTypesList = new List<string>() { "truncation", "summarization" };
     private string _reductionType = "truncation";
     private async Task ReduceChatHistory()
@@ -486,11 +597,9 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
         }
     }
 
-    protected override void OnInitialized()
-    {
-        if (_kernelInfo is not null) _configuredModelProvider = _kernelInfo.ModelProvider;
-        _chatService = _kernel.GetRequiredService<IChatCompletionService>();
-    }
+    // protected override void OnInitialized()
+    // {
+    // }
 
     public void Dispose()
     {

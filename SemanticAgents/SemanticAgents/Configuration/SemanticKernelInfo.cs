@@ -7,6 +7,6 @@
     {
         public string? ModelProvider { get; set; } = "Check Configuration";
 
-        // public bool ModelLoaded { get; set; } = false;
+        public string? LoadedModelId { get; set; } 
     }
 }

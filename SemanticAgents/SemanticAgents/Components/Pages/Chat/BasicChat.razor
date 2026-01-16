@@ -12,19 +12,38 @@
 
 <PageTitle>Basic Chat</PageTitle>
 
+<div class="row">
+    <div class="col-6">
+        <h4>Basic Chat</h4>
+    </div>
+    <div class="col-6">
+        <p class="mx-0 my-0 text-secondary-alt text-sm-end">
+            <i class="bi-lightning-charge-fill"></i>
+            @if (!string.IsNullOrWhiteSpace(_kernelInfo?.LoadedModelId))
+            {
+                <b><i>&nbsp; LLM: @_kernelInfo?.LoadedModelId &nbsp;  &nbsp;  Provider: @_kernelInfo?.ModelProvider</i></b>
+            }
+            else
+            {
+                <b><i>&nbsp; LLM Provider: @_kernelInfo?.ModelProvider</i></b>
+            }
+        </p>
+    </div>
+</div>
+
 @if (_configuredModelProvider == "OpenAI" || _configuredModelProvider == "Grok")
 {
-    <RemoteModelConfiguration ConfiguredModelProvider="@_configuredModelProvider" ModelIsLoaded="SetModelIsLoaded"></RemoteModelConfiguration>
+    <RemoteModelConfiguration ConfiguredModelProvider="@_configuredModelProvider" ModelIdLoadedCallback="SetSemanticKernelInfoLoadedModelId"></RemoteModelConfiguration>
 }
 else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "Ollama")
 {
-    <LocalModelConfiguration ConfiguredModelProvider="@_configuredModelProvider" ModelIsLoaded="SetModelIsLoaded"></LocalModelConfiguration>
+    <LocalModelConfiguration ConfiguredModelProvider="@_configuredModelProvider" ModelIdLoadedCallback="SetSemanticKernelInfoLoadedModelId"></LocalModelConfiguration>
 }
 
 @* BODY *@
 
 <div class="row mt-2">
-    @if (_modelIsLoaded)
+    @if (!string.IsNullOrWhiteSpace(_kernelInfo?.LoadedModelId))
     {
         <div class="col-2">
             @if (_chatHistory is null)
@@ -119,9 +138,18 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
     private string? _configuredModelProvider;
     // private string? _configuredTextModelId;
 
-    private bool _modelIsLoaded;
+    // private bool _modelIsLoaded;
 
-    private void SetModelIsLoaded(bool isLoaded) => _modelIsLoaded = isLoaded;
+    private void SetSemanticKernelInfoLoadedModelId(string modelId)
+    {
+        if (_kernelInfo is not null)
+        {
+            _kernelInfo.LoadedModelId = modelId;
+            // await _toastr.ShowToastrSuccess($"Model {_kernelInfo.LoadedModelId} is Loaded!");
+            this.StateHasChanged();
+        }
+    }
+    // private void SetModelIsLoaded(bool isLoaded) => _modelIsLoaded = isLoaded;
 
     private void ClearUserMessage() => _userMessage = string.Empty;
     private bool _showChatHistory;

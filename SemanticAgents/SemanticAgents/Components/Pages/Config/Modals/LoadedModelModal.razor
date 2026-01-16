@@ -16,107 +16,110 @@
                     <DataAnnotationsValidator />
                     @if (ModelDTO != null)
                     {
-
-                        <div class="row mt-2">
-                            <div class="col-3">
-                                <label class="label mt-2" for="id">Id:</label>
-                            </div>
-                            <div class="col-9">
-                                <InputText inert class="form-control bg-dark text-light " id="id" @bind-Value="@ModelDTO.Id" />
-                            </div>
-                        </div>
-                        <div class="row mt-1">
-                            <div class="col-3">
-                                <label class="label mt-2" for="object">Object:</label>
-                            </div>
-                            <div class="col-9">
-                                <InputText inert class="form-control bg-dark text-light " id="object" @bind-Value="@ModelDTO.Object" />
-                            </div>
-                        </div>
-                        <div class="row mt-1">
-                            <div class="col-3">
-                                <label class="label mt-2" for="type">Type:</label>
-                            </div>
-                            <div class="col-9">
-                                <InputText inert class="form-control bg-dark text-light" id="type" @bind-Value="@ModelDTO.Type" />
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-3">
-                                <label class="label mt-2" for="publisher">Publisher:</label>
-                            </div>
-                            <div class="col-9">
-                                <InputText inert class="form-control bg-dark text-light " id="publisher" @bind-Value="@ModelDTO.Publisher" />
-                            </div>
-                        </div>
-
-                        <div class="row mt-2">
-                            <div class="col-3">
-                                <label class="label mt-2" for="arch">Arch:</label>
-                            </div>
-                            <div class="col-9">
-                                <InputText inert class="form-control bg-dark text-light " id="arch" @bind-Value="@ModelDTO.Arch" />
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-3">
-                                <label class="label mt-2" for="compat">Compatibility Type:</label>
-                            </div>
-                            <div class="col-9">
-                                <InputText inert class="form-control bg-dark text-light " id="compat" @bind-Value="@ModelDTO.Compatibility_Type" />
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-3">
-                                <label class="label mt-2" for="quant">Quantization:</label>
-                            </div>
-                            <div class="col-9">
-                                <InputText inert class="form-control bg-dark text-light " id="quant" @bind-Value="@ModelDTO.Quantization" />
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-3">
-                                <label class="label mt-2" for="state">State:</label>
-                            </div>
-                            <div class="col-9">
-                                <InputText inert class="form-control bg-dark text-light " id="state" @bind-Value="@ModelDTO.State" />
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-3">
-                                <label class="label mt-2" for="maxContext">Max Context Length:</label>
-                            </div>
-                            <div class="col-9">
-                                <InputNumber inert class="form-control bg-dark text-light " id="maxContext" @bind-Value="@ModelDTO.Max_Context_Length" />
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-3">
-                                <label class="label mt-2" for="loadedContext">Loaded Context Length:</label>
-                            </div>
-                            <div class="col-9">
-                                <InputNumber inert class="form-control bg-dark text-light " id="loadedContext" @bind-Value="@ModelDTO.Loaded_Context_Length" />
-                            </div>
-                        </div>
-                 
-                            <div class="row mt-2">
-                                <div class="col-3">
-                                    <label class="label mt-2" for="capabilities">Capabilities:</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="row mt-2">
+                                    <div class="col-4">
+                                        <label class="label mt-2" for="id">Id:</label>
+                                    </div>
+                                    <div class="col-7">
+                                        <InputText inert class="form-control bg-dark text-light text-sm-start " id="id" @bind-Value="@ModelDTO.Id" />
+                                    </div>
                                 </div>
-                                <div class="col-9">
-                                    <InputTextArea inert rows="2" class="form-control bg-dark text-light " id="capabilities" @bind-Value="Capabilities" />
+                                <div class="row mt-1">
+                                    <div class="col-4">
+                                        <label class="label mt-2" for="object">Object:</label>
+                                    </div>
+                                    <div class="col-7">
+                                        <InputText inert class="form-control bg-dark text-light text-sm-start " id="object" @bind-Value="@ModelDTO.Object" />
+                                    </div>
+                                </div>
+                                <div class="row mt-1">
+                                    <div class="col-4">
+                                        <label class="label mt-2" for="type">Type:</label>
+                                    </div>
+                                    <div class="col-7">
+                                        <InputText inert class="form-control bg-dark text-light text-sm-start" id="type" @bind-Value="@ModelDTO.Type" />
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-4">
+                                        <label class="label mt-2" for="publisher">Publisher:</label>
+                                    </div>
+                                    <div class="col-7">
+                                        <InputText inert class="form-control bg-dark text-light text-sm-start " id="publisher" @bind-Value="@ModelDTO.Publisher" />
+                                    </div>
+                                </div>
+
+                                <div class="row mt-2">
+                                    <div class="col-4">
+                                        <label class="label mt-2" for="arch">Arch:</label>
+                                    </div>
+                                    <div class="col-7">
+                                        <InputText inert class="form-control bg-dark text-light text-sm-start " id="arch" @bind-Value="@ModelDTO.Arch" />
+                                    </div>
                                 </div>
                             </div>
-                        
+                            <div class="col-6">
+                                <div class="row mt-2">
+                                    <div class="col-5">
+                                        <label class="label mt-2" for="compat">Compatibility Type:</label>
+                                    </div>
+                                    <div class="col-7">
+                                        <InputText inert class="form-control bg-dark text-light text-sm-start " id="compat" @bind-Value="@ModelDTO.Compatibility_Type" />
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-5">
+                                        <label class="label mt-2" for="quant">Quantization:</label>
+                                    </div>
+                                    <div class="col-7">
+                                        <InputText inert class="form-control bg-dark text-light text-sm-start " id="quant" @bind-Value="@ModelDTO.Quantization" />
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-5">
+                                        <label class="label mt-2" for="state">State:</label>
+                                    </div>
+                                    <div class="col-7">
+                                        <InputText inert class="form-control bg-dark text-light text-sm-start " id="state" @bind-Value="@ModelDTO.State" />
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-5">
+                                        <label class="label mt-2" for="maxContext">Max Context Length:</label>
+                                    </div>
+                                    <div class="col-7">
+                                        <InputNumber inert class="form-control bg-dark text-light text-sm-start " id="maxContext" @bind-Value="@ModelDTO.Max_Context_Length" />
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-5">
+                                        <label class="label mt-2" for="loadedContext">Loaded Context Length:</label>
+                                    </div>
+                                    <div class="col-7">
+                                        <InputNumber inert class="form-control bg-dark text-light text-sm-start " id="loadedContext" @bind-Value="@ModelDTO.Loaded_Context_Length" />
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="row mt-2">
+                            <div class="col-2">
+                                <label class="label mt-2" for="capabilities">Capabilities:</label>
+                            </div>
+                            <div class="col-10">
+                                <InputTextArea inert rows="2" class="form-control bg-dark text-light text-sm-start " id="capabilities" @bind-Value="Capabilities" />
+                            </div>
+                        </div>
+
                         <br />
 
                         <div class="row mt-2">
-                            <div class="col-5 offset-5">
+                            <div class="col-5 offset-4">
                                 <button class="btn button-modal-primary form-control" @onclick="OnCancel">@CancelButtonTitle</button>
                             </div>
-                            @* <div class="col-4 offset-1">
-                                <button class="btn button-modal-success form-control" type="submit">@SubmitButtonTitle</button>
-                            </div> *@
                         </div>
                     }
                     else

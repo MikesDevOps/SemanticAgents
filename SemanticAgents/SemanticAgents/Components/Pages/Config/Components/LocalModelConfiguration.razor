@@ -72,7 +72,7 @@
     public IToastrService Toastr { get; set; } = default!;
 
     [Parameter]
-    public EventCallback<bool> ModelIsLoaded { get; set; }
+    public EventCallback<string> ModelIdLoadedCallback { get; set; }
 
     private bool _loadingConfiguration;
     private bool _thinking;
@@ -86,7 +86,7 @@
     private LMStudioModelDTO? _loadedLMStudioModel;
     private string? _loadedModelCapabilities;
     private bool _showLMStudioModel;
-    private async Task ShowLoadedLMStudioModel()
+    private void ShowLoadedLMStudioModel()
     {
         if (_loadedLMStudioModel is null) return;
         // await Toastr.ShowToastrSuccess($"The loaded model is NOT null!!!");
@@ -109,7 +109,7 @@
                 _errorMessage = $"The LMStudio Http Provider is null";
                 return;
             }
-            bool modelIsLoaded = false;
+
             var result = await _lmStudioHttpProvider.GetLMStudioLoadedModelsAsync();
             if (result.IsSuccess)
             {
@@ -119,21 +119,19 @@
                     _loadedLMStudioModel = loadedModels.FirstOrDefault(m => m.State == "loaded");
                     if (_loadedLMStudioModel is not null)
                     {
-                        // JsonSerializerOptions _jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-                        // string jsonModel = JsonSerializer.Serialize(loaded, _jsonOptions);
-                        // Console.WriteLine($"Loaded LM Studio Model: \n{jsonModel}");
-
-                        // _modelInfo = ($"Model ID: {loaded.Id}, Type: {loaded.Type}, Publisher: {loaded.Publisher}, State: {loaded.State}");
                         if (_loadedLMStudioModel.Capabilities is not null) _loadedModelCapabilities = string.Join(", ", _loadedLMStudioModel.Capabilities);
                         _loadedModelId = _loadedLMStudioModel.Id;
-                        modelIsLoaded = true;
+
+                        // await Toastr.ShowToastrSuccess($"LM Studio Model {_loadedModelId} is loaded.");
+                        await ModelIdLoadedCallback.InvokeAsync(_loadedModelId);
+
+
                         if (_loadedModelId != _configuredTextModelId) _warningMessage = $"Warning: The actual text model \'{_loadedModelId}\' " +
                         $"loaded in LMStudio does not match the model \'{_configuredTextModelId}\' specified by the application configuration. " +
                         $"The model may not behave as expected.";
                     }
                     else
                     {
-                        // _modelInfo = $"A loaded LM Studio model was not found.";
                         _errorMessage = "Please check LM Studio configuration.";
                     }
                 }
@@ -141,7 +139,6 @@
             else _errorMessage = result.ErrorMessage;
             _loadingConfiguration = false;
             _thinking = false;
-            await ModelIsLoaded.InvokeAsync(modelIsLoaded);
         }
         catch (Exception ex)
         {
@@ -160,7 +157,7 @@
             _errorMessage = $"The Ollama Http Provider is null";
             return;
         }
-        bool modelIsLoaded = false;
+
         var result = await _ollamaHttpProvider.GetOllamaLoadedModelsAsync();
         if (result.IsSuccess)
         {
@@ -170,16 +167,17 @@
                 OllamaModelDTO? loaded = loadedModels.FirstOrDefault();
                 if (loaded is not null)
                 {
-                    // _modelInfo = ($"Model ID: {loaded.Model}");
                     _loadedModelId = loaded.Model;
-                    modelIsLoaded = true;
+                    
+                    // await Toastr.ShowToastrSuccess($"Ollama Model {_loadedModelId} is loaded.");
+                    await ModelIdLoadedCallback.InvokeAsync(_loadedModelId);
+
                     if (_loadedModelId != _configuredTextModelId) _warningMessage = $"Warning: The actual text model \'{_loadedModelId}\' " +
                     $"loaded in Ollama does not match the model \'{_configuredTextModelId}\' specified by the application configuration. " +
                     $"The model may not behave as expected.";
                 }
                 else
                 {
-                    // _modelInfo = $"An Ollama model was not found.";
                     _errorMessage = "Please check Ollama configuration. It may take a moment for the model query to respond.";
                 }
             }
@@ -187,7 +185,6 @@
         else _errorMessage = result.ErrorMessage;
         _loadingConfiguration = false;
         _thinking = false;
-        await ModelIsLoaded.InvokeAsync(modelIsLoaded);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -205,84 +202,5 @@
     {
         _loadingConfiguration = true;
         _thinking = true;
-        // GetConfiguredProviderDefaults();
-        // _chatService = _kernel.GetRequiredService<IChatCompletionService>();
-        // if (_kernelInfo is not null) _configuredModelProvider = _kernelInfo.ModelProvider;
     }
 }
-
-            @*
-@if (!_loadingConfiguration)
-{
-    <div class="row mt-2">
-        <div class="col-4">
-            <h5 class="mt-2">Model Provider: <span class="text-info-alt">@ConfiguredModelProvider</span></h5>
-        </div>
-        <div class="col-3">
-            <input inert type="text" class="bg-dark text-light form-control" @bind-value="ConfiguredModelProvider" />
-        </div>
-        <div class="col-4">
-            <h5 class="mt-2">Loaded Model: <span class="text-info-alt">@_loadedModelId</span></h5>
-        </div>
-        <div class="col-3">
-            <input inert type="text" class="bg-dark text-light form-control" @bind-value="_loadedModelId" />
-        </div>
-        @if (_loadedLMStudioModel is not null)
-        {
-            <div class="col-2 offset-1">
-                <a class="btn button-custom-yellow form-control" @onclick="ShowLoadedLMStudioModel">Model Info</a>
-            </div>
-        }
-    </div>
-    <div class="row mt-2">
-        <div class="col-12">
-            <h6 class="text-info-alt"><i>@_modelInfo</i></h6>
-        </div>
-    </div>
-}
-
-@if (_loadedLMStudioModel is not null)
-{
-    <h5>Loaded Model:</h5>
-    <div class="row mt-2">
-        <div class="col-3">
-            <span>Model Id: @_loadedLMStudioModel.Id</span>
-        </div>
-        <div class="col-3">
-            <span>Object: @_loadedLMStudioModel.Object</span>
-        </div>
-        <div class="col-3">
-            <span>Type: @_loadedLMStudioModel.Type</span>
-        </div>
-        <div class="col-3">
-            <span>Publisher: @_loadedLMStudioModel.Publisher</span>
-        </div>
-    </div>
-    <div class="row mt-2">
-        <div class="col-3">
-            <span>Arch: @_loadedLMStudioModel.Arch</span>
-        </div>
-        <div class="col-3">
-            <span>Compatability Type: @_loadedLMStudioModel.Compatibility_Type</span>
-        </div>
-        <div class="col-3">
-            <span>Quantization: @_loadedLMStudioModel.Quantization</span>
-        </div>
-        <div class="col-3">
-            <span>State: @_loadedLMStudioModel.State</span>
-        </div>
-    </div>
-
-    <div class="row mt-2">
-        <div class="col-3">
-            <span>Max Context Length: @_loadedLMStudioModel.Max_Context_Length</span>
-        </div>
-        <div class="col-3">
-            <span>Loaded Context Length: @_loadedLMStudioModel.Loaded_Context_Length</span>
-        </div>
-        <div class="col-6">
-            <span>Capabilities: @string.Join(", ", _loadedLMStudioModel.Capabilities!)</span>
-        </div>
-    </div>
-}
-            *@

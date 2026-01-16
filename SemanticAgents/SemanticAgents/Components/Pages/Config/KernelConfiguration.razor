@@ -7,18 +7,36 @@
 @using SemanticAgents.Configuration
 @using SemanticAgents.SemanticKernelDTOs
 @inject IToastrService Toastr
+@using SemanticAgents.Components.Layout
 
 <PageTitle>Kernel Configuration</PageTitle>
 
-<h3>Semantic Kernel Configuration</h3>
+<div class="row">
+    <div class="col-6">
+        <h4>Semantic Kernel Configuration</h4>
+    </div>
+    <div class="col-6">
+        <p class="mx-0 my-0 text-secondary-alt text-sm-end">
+            <i class="bi-lightning-charge-fill"></i>
+            @if (!string.IsNullOrWhiteSpace(_kernelInfo?.LoadedModelId))
+            {
+                <b><i>&nbsp; LLM: @_kernelInfo?.LoadedModelId &nbsp;  &nbsp;  Provider: @_kernelInfo?.ModelProvider</i></b>
+            }
+            else
+            {
+                <b><i>&nbsp; LLM Provider: @_kernelInfo?.ModelProvider</i></b>
+            }
+        </p>
+    </div>
+</div>
 
 @if (_configuredModelProvider == "OpenAI" || _configuredModelProvider == "Grok")
 {
-    <RemoteModelConfiguration ConfiguredModelProvider="@_configuredModelProvider"></RemoteModelConfiguration>
+    <RemoteModelConfiguration ConfiguredModelProvider="@_configuredModelProvider" ModelIdLoadedCallback="SetSemanticKernelInfoLoadedModelId"></RemoteModelConfiguration>
 }
 else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "Ollama")
 {
-    <LocalModelConfiguration ConfiguredModelProvider="@_configuredModelProvider" ModelIsLoaded="SetModelIsLoaded"></LocalModelConfiguration>
+    <LocalModelConfiguration ConfiguredModelProvider="@_configuredModelProvider" ModelIdLoadedCallback="SetSemanticKernelInfoLoadedModelId"></LocalModelConfiguration>
 }
 
 @code {
@@ -28,8 +46,18 @@ else if (_configuredModelProvider == "LMStudio" || _configuredModelProvider == "
 
     private string? _configuredModelProvider;
 
-    private bool _modelIsLoaded;
-    private async Task SetModelIsLoaded(bool isLoaded) => await Toastr.ShowToastrSuccess("Model Loaded!");
+    // private bool _modelIsLoaded;
+
+    private void SetSemanticKernelInfoLoadedModelId(string modelId)
+    {
+        if (_kernelInfo is not null)
+        {
+            _kernelInfo.LoadedModelId = modelId;
+            // await Toastr.ShowToastrSuccess($"Model {_kernelInfo.LoadedModelId} is Loaded!");
+            this.StateHasChanged();
+        }
+    }
+    // private async Task SetModelIsLoaded(bool isLoaded) => await Toastr.ShowToastrSuccess("Model Loaded!");
 
     protected override void OnInitialized()
     {
