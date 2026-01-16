@@ -333,12 +333,12 @@
     private async Task InitializeChat()
     {
         _loadingConfiguration = true;
-        string? lmStudioTextModelId = await GetLMStudioLoadedModelData(); // _semanticKernelSettings?.Value.LMStudio_TextModelId;
-        string? lmStudioEndpoint = _semanticKernelSettings?.Value.LMStudio_Endpoint;
+        string? lmStudioTextModelId = await GetLMStudioLoadedModelData();   // _semanticKernelSettings?.Value.LMStudio_TextModelId;
+        string? lmStudioEndpoint = StaticData.LMStudio_Endpoint;            //  _semanticKernelSettings?.Value.LMStudio_Endpoint;
         if (string.IsNullOrWhiteSpace(lmStudioTextModelId) || string.IsNullOrWhiteSpace(lmStudioEndpoint))
         {
             // Configure to use OpenAI if LMStudio configuration is not valid
-            string? openAiTextModelId = _semanticKernelSettings?.Value.OpenAI_TextModelId;
+            string? openAiTextModelId = StaticData.OpenAI_TextModel_gpt3_5_Turbo;  // _semanticKernelSettings?.Value.OpenAI_TextModelId;
             string? openAiApiKey = _semanticKernelSettings?.Value.OpenAI_ApiKey;
             if (string.IsNullOrWhiteSpace(openAiTextModelId) || string.IsNullOrWhiteSpace(openAiApiKey))
             {

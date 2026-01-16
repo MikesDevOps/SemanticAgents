@@ -233,37 +233,37 @@
     private string? _grok_ApiKey;
 
 
-    private void GetLMStudioEndpoint() => _lmStudioEndpoint = SemanticKernelSettings?.Value.LMStudio_Endpoint;
+    private void GetLMStudioEndpoint() => _lmStudioEndpoint = StaticData.LMStudio_Endpoint;                         // SemanticKernelSettings?.Value.LMStudio_Endpoint;
     private void ClearLMStudioEndpoint() => _lmStudioEndpoint = null;
 
-    private void GetOllamaEndpoint() => _ollamaEndpoint = SemanticKernelSettings?.Value.Ollama_Endpoint;
+    private void GetOllamaEndpoint() => _ollamaEndpoint = StaticData.Ollama_Endpoint;                               // SemanticKernelSettings?.Value.Ollama_Endpoint;
     private void ClearOllamaEndpoint() => _ollamaEndpoint = null;
 
-    private void GetGrokEndpoint() => _grokEndpoint = SemanticKernelSettings?.Value.Grok_Endpoint;
+    private void GetGrokEndpoint() => _grokEndpoint = StaticData.Grok_Endpoint;                                     // SemanticKernelSettings?.Value.Grok_Endpoint;
     private void ClearGrokEndpoint() => _grokEndpoint = null;
 
-    private void GetLMStudioTextModelId() => _lmStudio_TextModelId = SemanticKernelSettings?.Value.LMStudio_TextModelId;
+    private void GetLMStudioTextModelId() => _lmStudio_TextModelId = StaticData.LMStudio_LocalModelId_gpt_oss_20b;          // SemanticKernelSettings?.Value.LMStudio_TextModelId;
     private void ClearLMStudioTextModelId() => _lmStudio_TextModelId = null;
 
-    private void GetOllamaTextModelId() => _ollama_TextModelId = SemanticKernelSettings?.Value.Ollama_TextModelId;
+    private void GetOllamaTextModelId() => _ollama_TextModelId = StaticData.Ollama_LocalModelId_phi3_Mini;          // SemanticKernelSettings?.Value.Ollama_TextModelId;
     private void ClearOllamaTextModelId() => _ollama_TextModelId = null;
 
-    private void GetOpenAiTextModelId() => _openAi_TextModelId = SemanticKernelSettings?.Value.OpenAI_TextModelId;
+    private void GetOpenAiTextModelId() => _openAi_TextModelId = StaticData.OpenAI_TextModel_gpt3_5_Turbo;          // SemanticKernelSettings?.Value.OpenAI_TextModelId;
     private void ClearOpenAiTextModelId() => _openAi_TextModelId = null;
 
-    private void GetGrokTextModelId() => _grok_TextModelId = SemanticKernelSettings?.Value.Grok_TextModelId;
+    private void GetGrokTextModelId() => _grok_TextModelId = StaticData.Grok_TextModel_Grok_2;                      // SemanticKernelSettings?.Value.Grok_TextModelId;
     private void ClearGrokTextModelId() => _grok_TextModelId = null;
 
-    private void GetOpenAiImageModelId() => _openAi_ImageModelId = SemanticKernelSettings?.Value.OpenAI_ImageModelId;
+    private void GetOpenAiImageModelId() => _openAi_ImageModelId = StaticData.OpenAI_ImageModel_dall_e_3;           // SemanticKernelSettings?.Value.OpenAI_ImageModelId;
     private void ClearOpenAiImageModelId() => _openAi_ImageModelId = null;
 
-    private void GetGrokImageModelId() => _grok_ImageModelId = SemanticKernelSettings?.Value.Grok_ImageModelId;
+    private void GetGrokImageModelId() => _grok_ImageModelId = StaticData.Grok_ImageModel_Grok_2_Image_1212;        // SemanticKernelSettings?.Value.Grok_ImageModelId;
     private void ClearGrokImageModelId() => _grok_ImageModelId = null;
 
-    private void GetLMStudioImageModelId() => _lmStudio_ImageModelId = $"{SemanticKernelSettings?.Value.LMStudio_ImageModelId?.Substring(0, 7)}...";
+    private void GetLMStudioImageModelId() => _lmStudio_ImageModelId = "pending";    // $"{SemanticKernelSettings?.Value.LMStudio_ImageModelId?.Substring(0, 7)}...";
     private void ClearLMStudioImageModelId() => _lmStudio_ImageModelId = null;
 
-    private void GetOllamaImageModelId() => _ollama_ImageModelId = $"{SemanticKernelSettings?.Value.Ollama_ImageModelId?.Substring(0, 7)}...";
+    private void GetOllamaImageModelId() => _ollama_ImageModelId = "pending";    // $"{SemanticKernelSettings?.Value.Ollama_ImageModelId}";
     private void ClearOllamaImageModelId() => _ollama_ImageModelId = null;
 
     private void GetOpenAiApiKey() => _openAi_ApiKey = $"{SemanticKernelSettings?.Value.OpenAI_ApiKey?.Substring(0, 7)}...";

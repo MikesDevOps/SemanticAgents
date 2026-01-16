@@ -102,7 +102,7 @@
         try
         {
             // Get Text Model Id specified by configuration
-            _configuredTextModelId = _semanticKernelSettings.Value.LMStudio_TextModelId;
+            _configuredTextModelId = StaticData.LMStudio_LocalModelId_gpt_oss_20b;  // _semanticKernelSettings.Value.LMStudio_TextModelId;
 
             if (_lmStudioHttpProvider is null)
             {
@@ -149,7 +149,7 @@
     private async Task GetOllamaLoadedModelData()
     {
         // Get Text Model Id specified by configuration
-        _configuredTextModelId = _semanticKernelSettings.Value.Ollama_TextModelId;
+        _configuredTextModelId = StaticData.Ollama_LocalModelId_phi3_Mini;  // _semanticKernelSettings.Value.Ollama_TextModelId;
 
         // NOTE the list of models is not updated based on actual loaded models as not loading more than one model - only selected model is updated
         if (_ollamaHttpProvider is null)

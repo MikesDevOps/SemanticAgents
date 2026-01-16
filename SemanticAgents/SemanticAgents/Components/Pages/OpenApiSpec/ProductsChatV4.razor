@@ -1,4 +1,4 @@
-﻿@page "/openApi/productsChatV3"
+﻿@page "/openApi/productsChatV4"
 @rendermode InteractiveServer
 @using Microsoft.Extensions.AI
 @using Microsoft.Extensions.Options
@@ -7,10 +7,12 @@
 @using Microsoft.SemanticKernel.Connectors.OpenAI
 @using SemanticAgents.Abstractions
 @using SemanticAgents.Client.Abstractions
+@using SemanticAgents.Client.Utility
 @using SemanticAgents.Configuration
 @using SemanticAgents.SemanticKernelDTOs
 @using SemanticAgents.SemanticKernelLocalHttpClients
 @using Microsoft.SemanticKernel.Plugins.OpenApi
+@using System.Text
 @implements IDisposable
 
 <PageTitle>Products Chat</PageTitle>
@@ -19,14 +21,21 @@
     <div class="col-6">
         <h4>Query Products API</h4>
     </div>
-    @if (!string.IsNullOrWhiteSpace(_textModelId) && !string.IsNullOrWhiteSpace(_configuredModelProvider))
+    @if (!string.IsNullOrWhiteSpace(_textModelId) && !string.IsNullOrWhiteSpace(_imageModelId) && !string.IsNullOrWhiteSpace(_modelProvider))
     {
         <div class="col-6">
             <p class="mx-0 my-0 text-secondary-alt text-sm-end">
                 <i class="bi-lightning-charge-fill"></i>
-
-                <b><i>&nbsp; LLM: @_textModelId &nbsp;  &nbsp;  Provider: @_configuredModelProvider</i></b>
-
+                <b><i>&nbsp; Text Model: @_textModelId &nbsp;  &nbsp; Image Model: @_imageModelId &nbsp;  &nbsp;  Provider: @_modelProvider</i></b>
+            </p>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(_textModelId) && !string.IsNullOrWhiteSpace(_modelProvider))
+    {
+        <div class="col-6">
+            <p class="mx-0 my-0 text-secondary-alt text-sm-end">
+                <i class="bi-lightning-charge-fill"></i>
+                <b><i>&nbsp; Text Model: @_textModelId &nbsp; &nbsp;  Provider: @_modelProvider</i></b>
             </p>
         </div>
     }
@@ -42,19 +51,76 @@
 
 
 <div class="row mt-2">
-    @if (_chatHistory is null)
+    <div class="col-2">
+        <label class="text-sm-start mt-1">Model Provider:</label>
+        <select class="bg-dark text-light form-select form-select-sm mt-1" @bind="_modelProvider" @bind:after="OnModelProviderChanged">
+            <option value="OpenAI">OpenAI</option>
+            <option value="Grok">Grok</option>
+            <option value="LMStudio">LMStudio</option>
+            <option value="Ollama">Ollama</option>
+        </select>
+    </div>
+    <div class="col-3">
+        <label class="text-sm-start mt-1">Text Model:</label>
+        @if (_modelProvider == "OpenAI" || _modelProvider == "Grok")
+        {
+            <select class="bg-dark text-light form-select form-select-sm mt-1" @bind="_textModelId">
+                @if (_textModelList is not null)
+                {
+                    @foreach (var model in _textModelList)
+                    {
+                        <option value="@model">@model</option>
+                    }
+                }
+            </select>
+        }
+        else
+        {
+            <input type="text" class="bg-dark text-light form-control form-control-sm mt-1" @bind="_textModelId" readonly />
+        }
+    </div>
+
+    <div class="col-3">
+        <label class="text-sm-start mt-1">Image Model:</label>
+        @if (_modelProvider == "OpenAI" || _modelProvider == "Grok")
+        {
+            <select class="bg-dark text-light form-select form-select-sm mt-1" @bind="_imageModelId">
+                @if (_imageModelList is not null)
+                {
+                    @foreach (var model in _imageModelList)
+                    {
+                        <option value="@model">@model</option>
+                    }
+                }
+            </select>
+        }
+        else
+        {
+            <input type="text" class="bg-dark text-light form-control form-control-sm mt-1" @bind="_imageModelId" readonly />
+        }
+    </div>
+</div>
+
+<div class="row mt-2">
+    @if (_kernel is null)
     {
         <div class="col-2">
-            <a class="btn button-custom-primary form-control" @onclick="InitializeChat">Initialize Chat</a>
+            <a class="btn button-custom-success form-control" @onclick="ConfigureKernelAsync">Configure Kernel</a>
         </div>
     }
-    else
+    else if (_modelConfigurationChanged)
+    {
+        <div class="col-2">
+            <a class="btn button-custom-warning form-control" @onclick="ConfigureKernelAsync">Reconfigure Kernel</a>
+        </div>
+    }
+    else if (_chatHistory is not null)
     {
         <div class="col-2">
             <a class="btn button-custom-primary form-control" @onclick="InitailizeChatHistory">Reset Chat</a>
         </div>
         <div class="col-2">
-            @if (_loadedLMStudioModelDTO is not null)
+            @if (_lmStudioModelDTO is not null)
             {
                 <a class="btn button-custom-yellow form-control" @onclick="ShowLoadedLMStudioModel">Model Info</a>
             }
@@ -115,14 +181,14 @@
             {
                 <div class="row mt-2">
                     <label for="historyList" class="form-label">History:</label>
-                    <textarea rows="12" class="bg-dark text-light form-control" id="historyList" @bind="_messageHistoryList" />
+                    <textarea rows="10" class="bg-dark text-light form-control" id="historyList" @bind="_messageHistoryList" />
                 </div>
             }
             else
             {
                 <div class="row mt-2">
                     <label for="assistantMessage" class="form-label">Assistant Message:</label>
-                    <textarea rows="12" class="bg-dark text-light form-control" id="assistantMessage" @bind="_assistantMessage" />
+                    <textarea rows="10" class="bg-dark text-light form-control" id="assistantMessage" @bind="_assistantMessage" />
                 </div>
             }
             <div class="row mt-2">
@@ -226,7 +292,6 @@
                     </div>
                 }
             }
-
         </div>
     </div>
 }
@@ -245,9 +310,9 @@
     </div>
 }
 
-@if (_showLMStudioModel && _loadedLMStudioModelDTO is not null)
+@if (_showLMStudioModel && _lmStudioModelDTO is not null)
 {
-    <LoadedModelModal ModelDTO="_loadedLMStudioModelDTO" ModalTitle="Loaded Model" Capabilities="@_loadedModelCapabilities"
+    <LoadedModelModal ModelDTO="_lmStudioModelDTO" ModalTitle="Loaded Model" Capabilities="@_loadedModelCapabilities"
                       Cancel="HideLoadedLMStudioModel" CancelButtonTitle="Close" />
 }
 
@@ -260,18 +325,106 @@
     private IToastrService _toastr { get; set; } = default!;
     [Inject]
     private ILMStudioHttpProvider _lmStudioHttpProvider { get; set; } = default!;
+    [Inject]
+    private IOllamaHttpProvider _ollamaHttpProvider { get; set; } = default!;
+
+    private async Task OnModelProviderChanged()
+    {
+        _loadingConfiguration = true;
+        switch (_modelProvider)
+        {
+            case "OpenAI":
+                _textModelId = StaticData.OpenAI_TextModel_gpt3_5_Turbo;                    // _semanticKernelSettings?.Value.OpenAI_TextModelId;
+                _textModelList = StaticData.OpenAI_TextModels;
+                _imageModelId = StaticData.OpenAI_ImageModel_dall_e_3;                      //_semanticKernelSettings?.Value.OpenAI_ImageModelId;
+                _imageModelList = StaticData.OpenAI_ImageModels;
+                _modelProviderEndpoint = null;
+                _apiKey = _semanticKernelSettings?.Value.OpenAI_ApiKey;
+                break;
+            case "Grok":
+                _textModelId = StaticData.Grok_TextModel_Grok_2;                    // _semanticKernelSettings?.Value.Grok_TextModelId;
+                _textModelList = StaticData.Grok_TextModels;
+                _imageModelId = StaticData.Grok_ImageModel_Grok_2_Image_1212;       // _semanticKernelSettings?.Value.Grok_ImageModelId;
+                _imageModelList = StaticData.Grok_ImageModels;
+                _modelProviderEndpoint = StaticData.Grok_Endpoint;                  //_semanticKernelSettings?.Value.Grok_Endpoint;
+                _apiKey = _semanticKernelSettings?.Value.Grok_ApiKey;
+                break;
+            case "LMStudio":
+                _modelProviderEndpoint = StaticData.LMStudio_Endpoint;              // _semanticKernelSettings?.Value.LMStudio_Endpoint;
+                _apiKey = null;
+                _textModelId = await GetLMStudioStateAsync();
+                _imageModelId = null;
+                break;
+            case "Ollama":
+                _modelProviderEndpoint = StaticData.Ollama_Endpoint;              // _semanticKernelSettings?.Value.Ollama_Endpoint;
+                _apiKey = null;
+                _textModelId = await GetOllamaStateAsync();
+                _imageModelId = null;
+                break;
+            default:
+                _modelProviderEndpoint = null;
+                _apiKey = null;
+                _textModelId = null;
+                _textModelList = null;
+                _imageModelId = null;
+                _imageModelList = null;
+                break;
+        }
+        _loadingConfiguration = false;
+        if (_kernel is not null) _modelConfigurationChanged = true;
+    }
+
+    private async Task ConfigureKernelAsync()
+    {
+        _loadingConfiguration = true;
+        if (_modelProvider == "OpenAI" || _modelProvider == "Grok")
+        {
+            _kernel = Kernel.CreateBuilder()
+                .AddOpenAIChatCompletion(
+                    modelId: _textModelId!,
+                    apiKey: _apiKey!,
+                    endpoint: string.IsNullOrWhiteSpace(_modelProviderEndpoint) ? null! : new Uri(_modelProviderEndpoint!))
+                .AddOpenAITextToImage(
+                    apiKey: _apiKey!,
+                    modelId: _imageModelId!)
+                .Build();
+        }
+        else if (_modelProvider == "LMStudio" || _modelProvider == "Ollama")
+        {
+            _kernel = Kernel.CreateBuilder()
+                .AddOpenAIChatCompletion(
+                    modelId: _textModelId!,
+                    apiKey: _apiKey!,
+                    endpoint: string.IsNullOrWhiteSpace(_modelProviderEndpoint) ? null! : new Uri(_modelProviderEndpoint!))
+                .Build();
+        }
+        else throw new InvalidDataException("Invalid Model Provider configured");
+
+        await ConfigureKernelPluginsAsync();
+        InitailizeChatHistory();
+
+        _loadingConfiguration = false;
+        _modelConfigurationChanged = false;
+        await _toastr.ShowToastrSuccess($"Chat instantiated with a Kernel configured using {_modelProvider}.");
+    }
 
     // Model state information
     #region Model State Information
-    private string? _configuredModelProvider;
-    private string? _textModelId { get; set; }
-    private LMStudioModelDTO? _loadedLMStudioModelDTO;
+    private bool _modelConfigurationChanged;    // set to true if kernel is already configured - and selected model provider or selected text or image model changes
+    private string? _modelProvider;
+    private string? _modelProviderEndpoint;
+    private string? _apiKey;
+    private string? _textModelId;
+    private List<string>? _textModelList;
+    private string? _imageModelId;
+    private List<string>? _imageModelList;
+    private LMStudioModelDTO? _lmStudioModelDTO;
+    private OllamaModelDTO? _ollamaModelDTO;
     private string? _loadedModelCapabilities;
-    // private string? _loadedModelId;
     private bool _showLMStudioModel;
     private void ShowLoadedLMStudioModel()
     {
-        if (_loadedLMStudioModelDTO is null) return;
+        if (_lmStudioModelDTO is null) return;
         // await Toastr.ShowToastrSuccess($"The loaded model is NOT null!!!");
         _showLMStudioModel = true;
     }
@@ -349,49 +502,49 @@
     #endregion Cancellation Token Handling
 
     #region Configuring Kernel and Chat
-    private async Task InitializeChat()
-    {
-        _loadingConfiguration = true;
-        await InstantiateKernelAsync();
-        await ConfigureKernelPluginsAsync();
-        InitailizeChatHistory();
-        _loadingConfiguration = false;
-    }
+    // private async Task InitializeChat()
+    // {
+    //     _loadingConfiguration = true;
+    //     await InstantiateKernelAsync();
+    //     await ConfigureKernelPluginsAsync();
+    //     InitailizeChatHistory();
+    //     _loadingConfiguration = false;
+    // }
 
-    // Supporting methods for InitializeChat()
-    private async Task InstantiateKernelAsync()
-    {
-        _loadingConfiguration = true;
+    // // Supporting methods for InitializeChat()
+    // private async Task InstantiateKernelAsync()
+    // {
+    //     _loadingConfiguration = true;
 
-        // Get Text Model Id from a running LMStudio instance
-        _textModelId = await GetLMStudioStateAsync();
-        string? providerEndpoint = StaticData.LMStudio_Endpoint;    // _semanticKernelSettings?.Value.LMStudio_Endpoint;
-        string? apiKey = null;
+    //     // Get Text Model Id from a running LMStudio instance
+    //     _textModelId = await GetLMStudioStateAsync();
+    //     string? providerEndpoint = _semanticKernelSettings?.Value.LMStudio_Endpoint;
+    //     string? apiKey = null;
 
-        if (string.IsNullOrWhiteSpace(_textModelId) || string.IsNullOrWhiteSpace(providerEndpoint))
-        {
-            _textModelId = StaticData.OpenAI_TextModel_gpt3_5_Turbo;    // _semanticKernelSettings?.Value.OpenAI_TextModelId;
-            apiKey = _semanticKernelSettings?.Value.OpenAI_ApiKey;
+    //     if (string.IsNullOrWhiteSpace(_textModelId) || string.IsNullOrWhiteSpace(providerEndpoint))
+    //     {
+    //         _textModelId = _semanticKernelSettings?.Value.OpenAI_TextModelId;
+    //         apiKey = _semanticKernelSettings?.Value.OpenAI_ApiKey;
 
-            if (string.IsNullOrWhiteSpace(_textModelId) || string.IsNullOrWhiteSpace(apiKey))
-            {
-                _errorMessage = $"A model provider could not be configured. Please check the values set in the SemanticKernelSettings configuration.";
-                return;
-            }
-            else _configuredModelProvider = "OpenAI";
-        }
-        else _configuredModelProvider = "LMStudio";
+    //         if (string.IsNullOrWhiteSpace(_textModelId) || string.IsNullOrWhiteSpace(apiKey))
+    //         {
+    //             _errorMessage = $"A model provider could not be configured. Please check the values set in the SemanticKernelSettings configuration.";
+    //             return;
+    //         }
+    //         else _modelProvider = "OpenAI";
+    //     }
+    //     else _modelProvider = "LMStudio";
 
-        _kernel = Kernel.CreateBuilder()
-            .AddOpenAIChatCompletion(
-                        modelId: _textModelId,
-                        apiKey: apiKey,
-                        endpoint: string.IsNullOrWhiteSpace(providerEndpoint) ? null! : new Uri(providerEndpoint))
-            .Build();
+    //     _kernel = Kernel.CreateBuilder()
+    //         .AddOpenAIChatCompletion(
+    //                     modelId: _textModelId,
+    //                     apiKey: apiKey,
+    //                     endpoint: string.IsNullOrWhiteSpace(providerEndpoint) ? null! : new Uri(providerEndpoint))
+    //         .Build();
 
-        _loadingConfiguration = false;
-        await _toastr.ShowToastrSuccess($"Kernel configured with Model {_textModelId} from Provider {_configuredModelProvider}.");
-    }
+    //     _loadingConfiguration = false;
+    //     await _toastr.ShowToastrSuccess($"Kernel configured with Model {_textModelId} from Provider {_modelProvider}.");
+    // }
 
     private async Task<string?> GetLMStudioStateAsync()
     {
@@ -407,11 +560,11 @@
             List<LMStudioModelDTO>? loadedModels = result.LoadedModels?.ToList();
             if (loadedModels is not null && loadedModels.Any())
             {
-                _loadedLMStudioModelDTO = loadedModels.FirstOrDefault(m => m.State == "loaded");
-                if (_loadedLMStudioModelDTO is not null)
+                _lmStudioModelDTO = loadedModels.FirstOrDefault(m => m.State == "loaded");
+                if (_lmStudioModelDTO is not null)
                 {
-                    if (_loadedLMStudioModelDTO.Capabilities is not null) _loadedModelCapabilities = string.Join(", ", _loadedLMStudioModelDTO.Capabilities);
-                    return _loadedLMStudioModelDTO.Id;
+                    if (_lmStudioModelDTO.Capabilities is not null) _loadedModelCapabilities = string.Join(", ", _lmStudioModelDTO.Capabilities);
+                    return _lmStudioModelDTO.Id;
                 }
                 else
                 {
@@ -421,7 +574,49 @@
         }
         else _errorMessage = result.ErrorMessage;
 
-        _thinking = false;
+        // _thinking = false;
+        return null;
+    }
+
+    private async Task<string?> GetOllamaStateAsync()
+    {
+        // _thinking = true;
+
+        bool success = false;
+        int retryCount = 3;
+        IEnumerable<OllamaModelDTO>? loadedModels = null;
+        string? errorMessage = null;
+
+        while (!success && retryCount > 0)
+        {
+            (bool IsSuccess, IEnumerable<OllamaModelDTO>? LoadedModels, string? ErrorMessage) result = await _ollamaHttpProvider.GetOllamaLoadedModelsAsync();
+
+            success = result.IsSuccess;
+            loadedModels = result.LoadedModels;
+            errorMessage = result.ErrorMessage;
+
+            retryCount--;
+        }
+
+        if (success)
+        {
+            if (loadedModels is not null && loadedModels.Any())
+            {
+                OllamaModelDTO? loaded = loadedModels.FirstOrDefault();
+                if (loaded is not null)
+                {
+                    return loaded.Model;
+                }
+                else
+                {
+                    errorMessage = $"A running Ollam model was not found. Please check Ollama configuration. " +
+                    "Note that it may take a few attemps for the model query to respond.";
+                }
+            }
+        }
+        else _errorMessage = errorMessage;
+
+        // _thinking = false;
         return null;
     }
 
@@ -453,9 +648,22 @@
     }
     #endregion Configuring Kernel and Chat
 
+    private void LogKernelConfiguration()
+    {
+        StringBuilder stringBuilder = new StringBuilder($"\nREQUEST SUBMISSION KERNEL CONFIGURATION: \n");
+        stringBuilder.AppendLine($"    Model Provider: {_modelProvider}");
+        stringBuilder.AppendLine($"    Model Provider Endpoint: {_modelProviderEndpoint}");
+        stringBuilder.AppendLine($"    API Key: {_apiKey?.Substring(0, 6)}...");
+        stringBuilder.AppendLine($"    Text Model Id: {_textModelId}");
+        stringBuilder.AppendLine($"    Image Model Id: {_imageModelId}\n");
+        Console.WriteLine(stringBuilder.ToString());
+    }
+
     #region Message Submission and Handling
     private async Task SubmitUserMessage()
     {
+        LogKernelConfiguration();
+
         try
         {
             if (string.IsNullOrWhiteSpace(_userMessage)) { _errorMessage = "Please enter a message."; return; }
@@ -509,14 +717,22 @@
             _thinking = false;
             _processingUserRequest = false;
         }
-        // catch (Exception ex)
-        // {
-        //     await _toastr.ShowToastrError($"EXCEPTION: {ex.Message}");
-        //     Console.WriteLine($"****** \nEXCEPTION: {ex.Message}\n******");
-        //     _errorMessage = ex.Message;
-        //     _thinking = false;
-        //     _processingUserRequest = false;
-        // }
+        catch (System.ClientModel.ClientResultException crex)
+        {
+            await _toastr.ShowToastrError($"CLIENT RESULT EXCEPTION: {crex.Message}");
+            Console.WriteLine($"****** \nEXCEPTION: {crex.Message}\n******");
+            _errorMessage = $"{crex.Message}. Please ensure the model provider endpoint is correct.";
+            _thinking = false;
+            _processingUserRequest = false;
+        }
+        catch (Exception ex)
+        {
+            await _toastr.ShowToastrError($"EXCEPTION: {ex.Message}");
+            Console.WriteLine($"****** \nEXCEPTION: TYPE: {ex.GetType().FullName}. \nMESSAGE: {ex.Message}\n******");
+            _errorMessage = ex.Message;
+            _thinking = false;
+            _processingUserRequest = false;
+        }
     }
 
     // Supporting methods for SubmitUserMessage()
@@ -607,6 +823,17 @@
         }
     }
     #endregion Chat History Reduction
+
+    protected override void OnInitialized()
+    {
+        _modelProvider = "OpenAI";
+        _textModelId = StaticData.OpenAI_TextModel_gpt3_5_Turbo;
+        _textModelList = StaticData.OpenAI_TextModels;
+        _imageModelId = StaticData.OpenAI_ImageModel_dall_e_3;
+        _imageModelList = StaticData.OpenAI_ImageModels;
+        _modelProviderEndpoint = null;
+        _apiKey = _semanticKernelSettings?.Value.OpenAI_ApiKey;
+    }
 
     public void Dispose()
     {

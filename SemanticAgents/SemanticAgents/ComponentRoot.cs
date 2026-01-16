@@ -21,36 +21,36 @@ namespace SemanticAgents
             {
                 services.AddKernel()
                     .AddOpenAIChatCompletion(
-                        modelId: config.GetSection("SemanticKernelSettings").GetValue<string>("OpenAI_TextModelId")!,
+                        modelId: StaticData.OpenAI_TextModel_gpt3_5_Turbo, // config.GetSection("SemanticKernelSettings").GetValue<string>("OpenAI_TextModelId")!,
                         apiKey: config.GetSection("SemanticKernelSettings").GetValue<string>("OpenAI_ApiKey")!)
                     .AddOpenAITextToImage(
                         apiKey: config.GetSection("SemanticKernelSettings").GetValue<string>("OpenAI_ApiKey")!,
-                        modelId: config.GetSection("SemanticKernelSettings").GetValue<string>("OpenAI_ImageModelId")!);
+                        modelId: StaticData.OpenAI_ImageModel_dall_e_3); //  config.GetSection("SemanticKernelSettings").GetValue<string>("OpenAI_ImageModelId")!);
             }
             else if (kernelOptions.ModelProvider == LanguageModelProviderOptions.Grok_Model_Provider)
             {
                 // !!! VERIFY ENDPOINT SHOULD BE CONFIGURED AND THE CORRECT ENDPOINT IS WHAT IS PULLED FROM USER-SECRETS !!!
                 services.AddKernel()
                     .AddOpenAIChatCompletion(
-                        modelId: config.GetSection("SemanticKernelSettings").GetValue<string>("Grok_TextModelId")!,
+                        modelId: StaticData.Grok_TextModel_Grok_2, // config.GetSection("SemanticKernelSettings").GetValue<string>("Grok_TextModelId")!,
                         apiKey: config.GetSection("SemanticKernelSettings").GetValue<string>("Grok_ApiKey")!,
-                        endpoint: new Uri(config.GetSection("SemanticKernelSettings").GetValue<string>("Grok_Endpoint")!));
+                        endpoint: new Uri(StaticData.Grok_Endpoint)); // new Uri(config.GetSection("SemanticKernelSettings").GetValue<string>("Grok_Endpoint")!));
             }
             else if (kernelOptions.ModelProvider == LanguageModelProviderOptions.LMStudio_Model_Provider)
             {
                 services.AddKernel()
                     .AddOpenAIChatCompletion(
-                        modelId: config.GetSection("SemanticKernelSettings").GetValue<string>("LMStudio_TextModelId")!,
+                        modelId: StaticData.LMStudio_LocalModelId_gpt_oss_20b, // config.GetSection("SemanticKernelSettings").GetValue<string>("LMStudio_TextModelId")!,
                         apiKey: null,
-                        endpoint: new Uri(config.GetSection("SemanticKernelSettings").GetValue<string>("LMStudio_Endpoint")!));
+                        endpoint: new Uri(StaticData.LMStudio_Endpoint)); // new Uri(config.GetSection("SemanticKernelSettings").GetValue<string>("LMStudio_Endpoint")!));
             }
             else if (kernelOptions.ModelProvider == LanguageModelProviderOptions.Ollama_Model_Provider)
             {
                 services.AddKernel()
                     .AddOpenAIChatCompletion(
-                        modelId: config.GetSection("SemanticKernelSettings").GetValue<string>("Ollama_TextModelId")!,
+                        modelId: StaticData.Ollama_LocalModelId_phi3_Mini, // config.GetSection("SemanticKernelSettings").GetValue<string>("Ollama_TextModelId")!,
                         apiKey: null,
-                        endpoint: new Uri(config.GetSection("SemanticKernelSettings").GetValue<string>("Ollama_Endpoint")!));
+                        endpoint: new Uri(StaticData.Ollama_Endpoint)); // new Uri(config.GetSection("SemanticKernelSettings").GetValue<string>("Ollama_Endpoint")!));
             }
             else throw new InvalidDataException("Invalid ModelProvider configured");
 

@@ -38,7 +38,6 @@
             Ollama_LocalModelId_phi3_Mini
         };
         public const string Ollama_Endpoint = "http://localhost:11434/v1";
-        public const string Ollama_LoadedModelsPath = "/api/ps";
 
         // GROK
         public const string Grok_TextModel_Grok_2 = "grok-2";
@@ -64,12 +63,13 @@
         {
             Grok_ImageModel_Grok_2_Image_1212
         };
-        // public const string Grok_Endpoint = "https://api.x.ai/v1";   // in user secrets
+        public const string Grok_Endpoint = "https://api.x.ai/v1";   
 
         // HTTP CLIENTS
         public const string LMStudioHttpClient_Name = "LMStudioHttpClient";
         public const string LMStudioHttpClient_BaseUrl = "http://localhost:1234";
         public const string LMStudioHttpClient_LoadedModelsPath = "/api/v0/models";
+        public const string LMStudioHttpClient_EnhancedLoadedModelsPath = "/api/v1/models";
 
         public const string OllamaoHttpClient_Name = "OllamaHttpClient";
         public const string OllamaHttpClient_BaseUrl = "http://localhost:11434/v1";
