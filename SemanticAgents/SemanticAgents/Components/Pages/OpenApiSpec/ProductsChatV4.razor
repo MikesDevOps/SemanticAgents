@@ -305,9 +305,7 @@
 
                 @if (_processingUserRequest || _configuringProvider || _configuringKernel || _reducingHistory)
                 {
-                    <br />
-                    <br />
-                    <div class="row">
+                    <div class="row mt-4">
                         <div class="col-12 text-center">
                             @if (_processingUserRequest)
                             {
@@ -327,7 +325,7 @@
                             }
                         </div>
                     </div>
-                    <div class="mx-auto text-center mb-3 mt-3">
+                    <div class="mx-auto text-center mb-3 mt-1">
                         <div class="spinner-border text-yellow-alt role-status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
@@ -375,6 +373,12 @@ else
 
     private async Task OnModelProviderChanged()
     {
+        if (string.IsNullOrWhiteSpace(_modelProvider))
+        {
+            _errorMessage = "The model provider is null or empty. Please reselect a model provider in the dropdown and try again.";
+            return;
+        }
+
         _configuringProvider = true;
 
         switch (_modelProvider)
@@ -621,6 +625,7 @@ else
         bool success = false;
         int retryCount = 3;
         IEnumerable<OllamaModelDTO>? loadedModels = null;
+        int modelCount = 0;
         string? errorMessage = null;
 
         while ((loadedModels is null || !loadedModels.Any()) && retryCount > 0)
@@ -629,6 +634,7 @@ else
 
             success = result.IsSuccess;
             loadedModels = result.LoadedModels;
+            if (loadedModels is not null) modelCount = loadedModels.Count();
             errorMessage = result.ErrorMessage;
 
             Console.WriteLine($"Connecting to Ollama Server ({retryCount}): Success = {result.IsSuccess}, Model Count = {loadedModels?.Count()}");
@@ -637,6 +643,12 @@ else
 
         if (success)
         {
+            // if (modelCount == 0)
+            // {
+            //     errorMessage = $"The Ollama indicates a model is not running. Please check Ollama server status and run a model. " +
+            //     "Note that it may take several attemps for the server to respond.";
+            // }
+            
             if (loadedModels is not null && loadedModels.Any())
             {
                 OllamaModelDTO? loaded = loadedModels.FirstOrDefault();
@@ -644,14 +656,20 @@ else
                 {
                     return loaded.Model;
                 }
-                else
-                {
-                    errorMessage = $"A running Ollama model was not found. Please check Ollama configuration. " +
-                    "Note that it may take several attemps for the server to respond.";
-                }
+            }
+            else
+            {
+                errorMessage = $"The Ollama indicates a model is not running. Please check Ollama server status and run a model. " +
+                "Note that it may take several attemps for the server to respond.";
             }
         }
-        else _errorMessage = errorMessage;
+        else
+        {
+            if (errorMessage is null) _errorMessage = $"After 3 attempts, the Ollama server indicated an error and did not return a list of models.";
+            else _errorMessage = $"{errorMessage}";
+            // if (loadedModels is null) _errorMessage = $"After 3 attempts, the Ollama server indicated an error and did not return a list of models.";
+            // else _errorMessage = $"After 3 attempts, the Ollama server indicated an error and returned a model list with {loadedModels.Count()} models";
+        }
 
         return null;
     }
@@ -680,7 +698,7 @@ else
         _chatHistory.AddSystemMessage(systemMessage);
         _userMessage = string.Empty;
         _assistantMessage = string.Empty;
-        _messageHistoryList = $"SYSTEM: {systemMessage}\n";
+        _messageHistoryList = $"SYSTEM: {systemMessage}\n\n";
         _chatHistoryCount = _chatHistory.Count;
     }
     #endregion Configuring Kernel and Chat
@@ -688,7 +706,7 @@ else
     #region Message Submission and Handling
     private async Task SubmitUserMessage()
     {
-        LogKernelConfiguration();
+        // LogKernelConfiguration();
 
         try
         {
@@ -759,12 +777,12 @@ else
     // Supporting methods for SubmitUserMessage()
     private void LogKernelConfiguration()
     {
-        StringBuilder stringBuilder = new StringBuilder($"\nREQUEST SUBMISSION KERNEL CONFIGURATION: \n");
+        StringBuilder stringBuilder = new StringBuilder($"\nKERNEL CONFIGURATION: \n");
         stringBuilder.AppendLine($"    Model Provider: {_modelProvider}");
         stringBuilder.AppendLine($"    Model Provider Endpoint: {_modelProviderEndpoint}");
         stringBuilder.AppendLine($"    API Key: {_apiKey?.Substring(0, 6)}...");
         stringBuilder.AppendLine($"    Text Model Id: {_textModelId}");
-        stringBuilder.AppendLine($"    Image Model Id: {_imageModelId}\n");
+        stringBuilder.AppendLine($"    Image Model Id: {_imageModelId}");
         Console.WriteLine(stringBuilder.ToString());
     }
 
@@ -805,10 +823,9 @@ else
             }
 
             _reducingHistory = true;
-
             int initialChatCount = _chatHistory.Count;
-
             IChatHistoryReducer? reducer = null;
+
             if (_reductionType == "truncation")
             {
                 reducer = new ChatHistoryTruncationReducer(2);

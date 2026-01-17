@@ -42,7 +42,8 @@ namespace SemanticAgents.SemanticKernelLocalHttpClients
                     }
                     else
                     {
-                        return (false, null, $"Failed to get loaded models from Ollama.");
+                        string errorContent = await response.Content.ReadAsStringAsync();
+                        return (false, null, errorContent);     // $"Failed to get loaded models from Ollama.");
                     }
                 }
             }
@@ -50,6 +51,10 @@ namespace SemanticAgents.SemanticKernelLocalHttpClients
             {
                 Console.WriteLine($"ERROR: The targeted model could not be reached. Please ensure an Ollama Model is loaded and running, and also ensure the Ollama app is running with models exposed to the local network!\nMessage: {httpReqEx.Message}");
                 return (false, null, $"The model could not be reached. Please ensure an Ollama Model is loaded and running, and also ensure the Ollama app is running with models exposed to the local network!");
+            }
+            catch (Exception ex)
+            {
+                return (false, null, ex.Message);
             }
         }
     }
