@@ -33,9 +33,16 @@
 
         // OLLAMA
         public const string Ollama_LocalModelId_phi3_Mini = "phi3:mini";
+        public const string Ollama_LocalModelId_deepseek_r1_14b = "deepseek-r1:14b";
+        public const string Ollama_LocalModelId_gpt_oss_20b = "gpt-oss:20b";
+        public const string Ollama_LocalModelId_gemma3_27b = "gemma3:27b";
+        public const string Ollama_CodingModelId_devstral_small_2_24b = "devstral-small-2:24b";
+        public const string Ollama_CodingModelId_qwen3_coder_30b = "qwen3-coder:30b";
+
         public static List<string> Ollama_TextModels = new List<string>
         {
-            Ollama_LocalModelId_phi3_Mini
+            Ollama_LocalModelId_phi3_Mini, Ollama_LocalModelId_deepseek_r1_14b, Ollama_LocalModelId_gpt_oss_20b, Ollama_LocalModelId_gemma3_27b, 
+            Ollama_CodingModelId_devstral_small_2_24b, Ollama_CodingModelId_qwen3_coder_30b
         };
         public const string Ollama_Endpoint = "http://localhost:11434/v1";
 
