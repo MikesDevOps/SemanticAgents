@@ -15,11 +15,11 @@
 @using System.Text
 @implements IDisposable
 
-<PageTitle>Products Chat</PageTitle>
+<PageTitle>Products Assistant</PageTitle>
 
 <div class="row">
     <div class="col-6">
-        <h4>Query Products API</h4>
+        <h4>Products API Assistant</h4>
     </div>
     @if (!string.IsNullOrWhiteSpace(_textModelId) && !string.IsNullOrWhiteSpace(_imageModelId) && !string.IsNullOrWhiteSpace(_modelProvider))
     {
@@ -107,9 +107,16 @@
     @if (_lmStudioModelDTO is not null)
     {
         <div class="col-2">
-            <a class="btn button-custom-yellow form-control mt-4" @onclick="ShowLoadedLMStudioModel">Model Info</a>
+            <a class="btn button-custom-primary form-control mt-4" @onclick="ShowLoadedLMStudioModel">Model Info</a>
         </div>
     }
+    @if (_kernel is not null)
+    {
+        <div class="col-2">
+            <a class="btn button-custom-danger form-control mt-4" @onclick="ResetAll">Reset All</a>
+        </div>
+    }
+
 </div>
 
 <div class="row mt-2">
@@ -169,7 +176,7 @@
         <div class="col-8">
             @* LEFT COLUMN - CHAT HISTORY *@
             <div class="row mt-2">
-                <label for="userMessage" class="form-label">Your Message:</label>
+                <label for="userMessage" class="form-label">Your Request:</label>
                 <textarea rows="4" class="bg-dark text-light form-control" id="userMessage"
                           @bind="_userMessage" @bind:after="SubmitUserMessage" @onfocus="ClearUserMessage" />
             </div>
@@ -188,14 +195,14 @@
             @if (_showChatHistory)
             {
                 <div class="row mt-2">
-                    <label for="historyList" class="form-label">History:</label>
+                    <label for="historyList" class="form-label">Chat History:</label>
                     <textarea rows="9" class="bg-dark text-light form-control" id="historyList" @bind="_messageHistoryList" />
                 </div>
             }
             else
             {
                 <div class="row mt-2">
-                    <label for="assistantMessage" class="form-label">Assistant Message:</label>
+                    <label for="assistantMessage" class="form-label">Assistant Response:</label>
                     <textarea rows="9" class="bg-dark text-light form-control" id="assistantMessage" @bind="_assistantMessage" />
                 </div>
             }
@@ -211,10 +218,13 @@
             @if (_promptExecutionSettings is not null)
             {
                 <br />
-                <h5 class="text-info-alt mt-2">Prompt Execution Settings:</h5>
-                <div class="row">
+
+                <hr /> 
+
+                <h5 class="text-info-alt mt-2">Client Prompt Settings:</h5>
+                <div class="row mt-3">
                     <div class="col-6">
-                        <label class="label" for="maxtokens">Max Tokens:</label>
+                        <label class="label mt-1" for="maxtokens">Max Tokens:</label>
                     </div>
                     <div class="col-6">
                         <input type="number" class="form-control bg-dark text-light " id="maxtokens"
@@ -233,7 +243,7 @@
                 {
                     <div class="row mt-2">
                         <div class="col-6">
-                            <label class="label" for="topp">Top P:</label>
+                            <label class="label mt-1" for="topp">Top P:</label>
                         </div>
                         <div class="col-6">
                             <input type="number" class="form-control bg-dark text-light " id="topp"
@@ -245,7 +255,7 @@
                 {
                     <div class="row mt-2">
                         <div class="col-6">
-                            <label class="label" for="temp">Temperature:</label>
+                            <label class="label mt-1" for="temp">Temperature:</label>
                         </div>
                         <div class="col-6">
                             <input type="number" class="form-control bg-dark text-light " id="temp"
@@ -255,7 +265,7 @@
                 }
                 <div class="row mt-2">
                     <div class="col-6">
-                        <label class="label" for="freqpen">Frequency Penalty:</label>
+                        <label class="label mt-1" for="freqpen">Frequency Penalty:</label>
                     </div>
                     <div class="col-6">
                         <input type="number" class="form-control bg-dark text-light " id="freqpen"
@@ -264,7 +274,7 @@
                 </div>
                 <div class="row mt-2">
                     <div class="col-6">
-                        <label class="label" for="prespen">Presence Penalty:</label>
+                        <label class="label mt-1" for="prespen">Presence Penalty:</label>
                     </div>
                     <div class="col-6">
                         <input type="number" class="form-control bg-dark text-light " id="prespen"
@@ -273,7 +283,7 @@
                 </div>
                 <div class="row mt-2">
                     <div class="col-6">
-                        <label class="label" for="tool">Tool Call Behavior:</label>
+                        <label class="label mt-1" for="tool">Tool Call Behavior:</label>
                     </div>
                     <div class="col-6">
                         <select type="text" class="form-select bg-dark text-light " id="tool"
@@ -284,13 +294,37 @@
 
                     </div>
                 </div>
-                @if (_thinking)
+
+                <hr />
+
+                <div class="row">
+                    <div class="col-3 offset-3">
+                        <a class="btn button-custom-info form-control" @onclick="SetPromptExecutionSettingsDefaults">Set Defaults</a>
+                    </div>
+                </div>
+
+                @if (_processingUserRequest || _configuringProvider || _configuringKernel || _reducingHistory)
                 {
                     <br />
                     <br />
                     <div class="row">
                         <div class="col-12 text-center">
-                            <p class="text-yellow-alt"><i>... processing request ...</i></p>
+                            @if (_processingUserRequest)
+                            {
+                                <p class="text-yellow-alt"><i>... processing request ...</i></p>
+                            }
+                            else if (_configuringProvider)
+                            {
+                                <p class="text-yellow-alt"><i>... configuring provider ...</i></p>
+                            }
+                            else if (_configuringKernel)
+                            {
+                                <p class="text-yellow-alt"><i>... configuring kernel ...</i></p>
+                            }
+                            else if (_reducingHistory)
+                            {
+                                <p class="text-yellow-alt"><i>... reducing history ...</i></p>
+                            }
                         </div>
                     </div>
                     <div class="mx-auto text-center mb-3 mt-3">
@@ -299,22 +333,26 @@
                         </div>
                     </div>
                 }
-                @if (_loadingConfiguration)
-                {
-                    <div class="row mt-2">
-                        <div class="col-12">
-                            <p class="text-yellow-alt"><i>... loading configuration ...</i></p>
-                        </div>
-                    </div>
-                    <div class="mx-auto text-center mb-3 mt-3" style="height:160px;">
-                        <div class="spinner-border text-yellow-alt role-status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                }
             }
+        
         </div>
     </div>
+}
+else
+{
+    @if (_configuringProvider)
+    {
+        <div class="row mt-2">
+            <div class="col-12 text-center">
+                <p class="text-yellow-alt"><i>... configuring provider ...</i></p>
+            </div>
+        </div>
+        <div class="mx-auto text-center mb-3 mt-3" style="height:160px;">
+            <div class="spinner-border text-yellow-alt role-status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
 }
 
 @if (_showLMStudioModel && _lmStudioModelDTO is not null)
@@ -337,7 +375,7 @@
 
     private async Task OnModelProviderChanged()
     {
-        _loadingConfiguration = true;
+        _configuringProvider = true;
 
         switch (_modelProvider)
         {
@@ -396,13 +434,13 @@
             _modelConfigurationIsInvalid = false;
             _errorMessage = null;
         }
-        _loadingConfiguration = false;
+        _configuringProvider = false;
         if (_kernel is not null) _modelConfigurationChanged = true;
     }
 
     private async Task ConfigureKernelAsync()
     {
-        _loadingConfiguration = true;
+        _configuringKernel = true;
 
         if (_modelProvider == "OpenAI" || _modelProvider == "Grok")
         {
@@ -435,7 +473,7 @@
         await ConfigureKernelPluginsAsync();
         if (_chatHistory is null) InitailizeChatHistory();
 
-        _loadingConfiguration = false;
+        _configuringKernel = false;
         _modelConfigurationChanged = false;
         await _toastr.ShowToastrSuccess($"Chat instantiated with a Kernel configured using {_modelProvider}.");
     }
@@ -469,8 +507,8 @@
 
     // User message handling and information
     #region Messages and Information
-    private bool _thinking = false;
-    private bool _loadingConfiguration = false;
+    private bool _configuringProvider = false;
+    private bool _configuringKernel = false;
     private bool _processingUserRequest = false;
     private string? _userMessage;
     private string? _errorMessage;
@@ -505,6 +543,18 @@
         PresencePenalty = 0,
         ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
     };
+    private void SetPromptExecutionSettingsDefaults()
+    {
+        _promptExecutionSettings = new()
+        {
+            MaxTokens = 4000,
+            Temperature = 0.7,
+            TopP = 0.95,
+            FrequencyPenalty = 0,
+            PresencePenalty = 0,
+            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
+        };
+    }
     private string _toolCallBehaviorString = "Auto Invoke";
     private void OnToolCallBehaviorStringChange()
     {
@@ -563,20 +613,17 @@
         }
         else _errorMessage = result.ErrorMessage;
 
-        // _thinking = false;
         return null;
     }
 
     private async Task<string?> GetOllamaStateAsync()
     {
-        // _thinking = true;
-
         bool success = false;
         int retryCount = 3;
         IEnumerable<OllamaModelDTO>? loadedModels = null;
         string? errorMessage = null;
 
-        while (!success && retryCount > 0)
+        while ((loadedModels is null || !loadedModels.Any()) && retryCount > 0)
         {
             (bool IsSuccess, IEnumerable<OllamaModelDTO>? LoadedModels, string? ErrorMessage) result = await _ollamaHttpProvider.GetOllamaLoadedModelsAsync();
 
@@ -584,6 +631,7 @@
             loadedModels = result.LoadedModels;
             errorMessage = result.ErrorMessage;
 
+            Console.WriteLine($"Connecting to Ollama Server ({retryCount}): Success = {result.IsSuccess}, Model Count = {loadedModels?.Count()}");
             retryCount--;
         }
 
@@ -598,14 +646,13 @@
                 }
                 else
                 {
-                    errorMessage = $"A running Ollam model was not found. Please check Ollama configuration. " +
-                    "Note that it may take a few attemps for the model query to respond.";
+                    errorMessage = $"A running Ollama model was not found. Please check Ollama configuration. " +
+                    "Note that it may take several attemps for the server to respond.";
                 }
             }
         }
         else _errorMessage = errorMessage;
 
-        // _thinking = false;
         return null;
     }
 
@@ -626,27 +673,17 @@
     private void InitailizeChatHistory()
     {
         _chatHistory = new ChatHistory();   // just using Clear() not working well.
-        _chatHistory.AddSystemMessage("You are a helpful assistant who has access to a collection of ProductDTOs using the plugin " +
+        string systemMessage = "You are a helpful assistant who has access to a collection of ProductDTOs using the plugin " +
             "with the pluginName \'products\'. ProductDTOs are equevalent to Products.  Any reference to the term Products in user messages " +
             "or Function descriptions should be considered to refer to ProductDTOs. Any reference to an Image should be understood to refer " +
-            "to an ImageDataDTO.  Any reference to a Document should be understood to refer to a DocumentDataDTO.");
+            "to an ImageDataDTO.  Any reference to a Document should be understood to refer to a DocumentDataDTO.";
+        _chatHistory.AddSystemMessage(systemMessage);
         _userMessage = string.Empty;
         _assistantMessage = string.Empty;
-        _messageHistoryList = string.Empty;
+        _messageHistoryList = $"SYSTEM: {systemMessage}\n";
         _chatHistoryCount = _chatHistory.Count;
     }
     #endregion Configuring Kernel and Chat
-
-    private void LogKernelConfiguration()
-    {
-        StringBuilder stringBuilder = new StringBuilder($"\nREQUEST SUBMISSION KERNEL CONFIGURATION: \n");
-        stringBuilder.AppendLine($"    Model Provider: {_modelProvider}");
-        stringBuilder.AppendLine($"    Model Provider Endpoint: {_modelProviderEndpoint}");
-        stringBuilder.AppendLine($"    API Key: {_apiKey?.Substring(0, 6)}...");
-        stringBuilder.AppendLine($"    Text Model Id: {_textModelId}");
-        stringBuilder.AppendLine($"    Image Model Id: {_imageModelId}\n");
-        Console.WriteLine(stringBuilder.ToString());
-    }
 
     #region Message Submission and Handling
     private async Task SubmitUserMessage()
@@ -662,7 +699,6 @@
 
             using (_cancellationTokenSource = new CancellationTokenSource())
             {
-                _thinking = true;
                 _processingUserRequest = true;
                 _chatHistory!.AddUserMessage(_userMessage);
                 _messageHistoryList += $"USER: {_userMessage}\n\n";
@@ -694,7 +730,6 @@
                 // _userMessage = string.Empty; // Note: _userMessage is cleared with 'onfocus' event on the html input textarea element
                 _chatHistoryCount = _chatHistory.Count;
                 if (_chatHistory.Count >= _reductionThreshold) _showReductionOption = true;
-                _thinking = false;
                 _processingUserRequest = false;
             }
         }
@@ -703,7 +738,6 @@
             await _toastr.ShowToastrInfo($"OPERATION CANCELLED EXCEPTION: Operation cancelled by user.");
             Console.WriteLine("Operation Canceled Exception: Operation cancelled by user.");
             _assistantMessage += $"\nOperation cancelled by user.";
-            _thinking = false;
             _processingUserRequest = false;
         }
         catch (System.ClientModel.ClientResultException crex)
@@ -711,7 +745,6 @@
             await _toastr.ShowToastrError($"CLIENT RESULT EXCEPTION: {crex.Message}");
             Console.WriteLine($"****** \nEXCEPTION: {crex.Message}\n******");
             _errorMessage = $"{crex.Message}. Please ensure the model provider endpoint is correct.";
-            _thinking = false;
             _processingUserRequest = false;
         }
         catch (Exception ex)
@@ -719,12 +752,22 @@
             await _toastr.ShowToastrError($"EXCEPTION: {ex.Message}");
             Console.WriteLine($"****** \nEXCEPTION: TYPE: {ex.GetType().FullName}. \nMESSAGE: {ex.Message}\n******");
             _errorMessage = ex.Message;
-            _thinking = false;
             _processingUserRequest = false;
         }
     }
 
     // Supporting methods for SubmitUserMessage()
+    private void LogKernelConfiguration()
+    {
+        StringBuilder stringBuilder = new StringBuilder($"\nREQUEST SUBMISSION KERNEL CONFIGURATION: \n");
+        stringBuilder.AppendLine($"    Model Provider: {_modelProvider}");
+        stringBuilder.AppendLine($"    Model Provider Endpoint: {_modelProviderEndpoint}");
+        stringBuilder.AppendLine($"    API Key: {_apiKey?.Substring(0, 6)}...");
+        stringBuilder.AppendLine($"    Text Model Id: {_textModelId}");
+        stringBuilder.AppendLine($"    Image Model Id: {_imageModelId}\n");
+        Console.WriteLine(stringBuilder.ToString());
+    }
+
     private void ValidatePromptExecutionSettings()
     {
         if (_promptExecutionSettings is null) _errorMessage = $"Prompt Execution Settings are not accessible.";
@@ -746,6 +789,7 @@
     // Chat History Reduction
     #region Chat History Reduction
     // Note: _messageHistoryList does not include the system message while _chatHistory does
+    private bool _reducingHistory = false;
     private List<string> _reductionTypesList = new List<string>() { "truncation", "summarization" };
     private string _reductionType = "truncation";
     private async Task ReduceChatHistory()
@@ -760,7 +804,7 @@
                 return;
             }
 
-            _thinking = true;
+            _reducingHistory = true;
 
             int initialChatCount = _chatHistory.Count;
 
@@ -790,7 +834,7 @@
                 _chatHistory = new ChatHistory(reducedHistory);
                 _showReductionOption = false;
             }
-            _thinking = false;
+
             _chatHistoryCount = _chatHistory.Count;
             _messageHistoryList = string.Empty;
             foreach (var message in _chatHistory)
@@ -803,16 +847,45 @@
             await _toastr.ShowToastrSuccess($"Chat history reduced from {initialChatCount} messages to {_chatHistory.Count} " +
             $"messages using {_reductionType} reduction.");
 
+            _reducingHistory = false;
+
         }
         catch (Exception ex)
         {
             Console.WriteLine($"****** \nEXCEPTION: {ex.Message}\n******");
             _errorMessage = ex.Message;
-            _thinking = false;
+            _reducingHistory = false;
         }
     }
     #endregion Chat History Reduction
 
+    private void ResetAll()
+    {
+        _kernel = null;
+        _chatHistory = null;
+        _errorMessage = null;
+        _userMessage = string.Empty;
+        _assistantMessage = string.Empty;
+        _messageHistoryList = string.Empty;
+        _chatHistoryCount = 0;
+        _showReductionOption = false;
+        _modelProvider = "OpenAI";
+        _textModelId = StaticData.OpenAI_TextModel_gpt3_5_Turbo;
+        _textModelList = StaticData.OpenAI_TextModels;
+        _imageModelId = StaticData.OpenAI_ImageModel_dall_e_3;
+        _imageModelList = StaticData.OpenAI_ImageModels;
+        _modelProviderEndpoint = null;
+        _apiKey = _semanticKernelSettings?.Value.OpenAI_ApiKey;
+        _reducingHistory = false;
+        _configuringKernel = false;
+        _configuringProvider = false;
+        _processingUserRequest = false;
+        _modelConfigurationChanged = false;
+        _modelConfigurationIsInvalid = false;
+        // if (_cancellationTokenSource is not null) _cancellationTokenSource.Dispose();    // this will throw an exception
+        // _cancellationTokenSource = null;
+    }
+    
     protected override void OnInitialized()
     {
         _modelProvider = "OpenAI";
