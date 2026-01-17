@@ -32,7 +32,7 @@ namespace SemanticAgents
                 // !!! VERIFY ENDPOINT SHOULD BE CONFIGURED AND THE CORRECT ENDPOINT IS WHAT IS PULLED FROM USER-SECRETS !!!
                 services.AddKernel()
                     .AddOpenAIChatCompletion(
-                        modelId: StaticData.Grok_TextModel_Grok_2, // config.GetSection("SemanticKernelSettings").GetValue<string>("Grok_TextModelId")!,
+                        modelId: StaticData.Grok_TextModel_Grok_3, // config.GetSection("SemanticKernelSettings").GetValue<string>("Grok_TextModelId")!,
                         apiKey: config.GetSection("SemanticKernelSettings").GetValue<string>("Grok_ApiKey")!,
                         endpoint: new Uri(StaticData.Grok_Endpoint)); // new Uri(config.GetSection("SemanticKernelSettings").GetValue<string>("Grok_Endpoint")!));
             }

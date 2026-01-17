@@ -40,22 +40,20 @@
         public const string Ollama_Endpoint = "http://localhost:11434/v1";
 
         // GROK
-        public const string Grok_TextModel_Grok_2 = "grok-2";
-        public const string Grok_TextModel_Grok_Beta = "grok-beta";
+        // public const string Grok_TextModel_Grok_2 = "grok-2";
+        // public const string Grok_TextModel_Grok_Beta = "grok-beta";
         public const string Grok_TextModel_Grok_3_Mini = "grok-3-mini";
-        public const string Grok_TextModel_Grok_3_Mini_Fast = "grok-3-mini-fast";
-        public const string Grok_TextModel_Grok_2_Vision_1212us_East_1 = "grok-2-vision-1212us-east-1";
-        public const string Grok_TextModel_Grok_2_Vision_1212us_West_1 = "grok-2-vision-1212us-west-1";
         public const string Grok_TextModel_Grok_3 = "grok-3";
+        public const string Grok_TextModel_Grok_2_Vision_1212 = "grok-2-vision-1212";
         public const string Grok_TextModel_Grok_4_0709 = "grok-4-0709";
-        public const string Grok_TextModel_Grok_3_FastUS_East_1 = "grok-3-fastus-east-1";
-        public const string Grok_TextModel_Grok_3_FastEU_West_1 = "grok-3-fasteu-west-1";
+        public const string Grok_TextModel_Grok_4_Fast_Reasoning = "grok-4-fast-reasoning";
+        public const string Grok_TextModel_Grok_4_1_Fast_Reasoning = "grok-4-1-fast-reasoning";
+        public const string Grok_TextModel_Code_Fast_1 = "grok-code-fast-1";
 
         public static List<string> Grok_TextModels = new List<string>
         {
-            Grok_TextModel_Grok_2, Grok_TextModel_Grok_Beta, Grok_TextModel_Grok_3_Mini, Grok_TextModel_Grok_3_Mini_Fast,
-            Grok_TextModel_Grok_2_Vision_1212us_East_1, Grok_TextModel_Grok_2_Vision_1212us_West_1, Grok_TextModel_Grok_3,
-            Grok_TextModel_Grok_4_0709, Grok_TextModel_Grok_3_FastUS_East_1, Grok_TextModel_Grok_3_FastEU_West_1
+            Grok_TextModel_Grok_3_Mini, Grok_TextModel_Grok_3, Grok_TextModel_Grok_2_Vision_1212, Grok_TextModel_Grok_4_0709, 
+            Grok_TextModel_Grok_4_Fast_Reasoning, Grok_TextModel_Grok_4_1_Fast_Reasoning, Grok_TextModel_Code_Fast_1, 
         };
 
         public const string Grok_ImageModel_Grok_2_Image_1212 = "grok-2-image-1212";

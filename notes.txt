@@ -38,3 +38,7 @@ LMStudio Model DTO
     "tool_use"
   ]
 }
+
+GROK
+    try https://api.x.ai as endpoint
+    
