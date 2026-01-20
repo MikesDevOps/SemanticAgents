@@ -1,3 +1,6 @@
+TO DO
+    Cancellation token - when disposed exception is caught, just log it - don't display error (toastr and error message)
+
 NUGETS
 
     Microsoft.Extensions.AI

@@ -1,3 +1,7 @@
+using Azure.Identity;
+using Azure.Security.KeyVault.Keys;
+using Azure.Security.KeyVault.Secrets;
+using Microsoft.Extensions.Azure;
 using MusicAgent.Blazor.Client.Services;
 using SemanticAgents;
 using SemanticAgents.Client.Abstractions;
@@ -13,10 +17,41 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
-builder.Services.AddOptions<SemanticKernelSettings>().Configure<IConfiguration>((options, config) =>
+// Azure Key Vault Configuration
+//var keyVaultEndpoint = Environment.GetEnvironmentVariable("KEYVAULT_ENDPOINT");
+//if (!string.IsNullOrEmpty(keyVaultEndpoint))
+//{
+//    builder.Configuration.AddAzureKeyVault(new Uri(keyVaultEndpoint), new DefaultAzureCredential());
+//}
+//// Add Azure Key Vault to configuration
+//var keyVaultEndpoint = Environment.GetEnvironmentVariable("KEYVAULT_ENDPOINT");
+//var keyVaultName = Environment.GetEnvironmentVariable("KEYVAULT_NAME");
+//// var keyVaultName = builder.Configuration["KeyVaultName"];
+//var keyVaultUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
+//if (!string.IsNullOrWhiteSpace(keyVaultEndpoint))
+//{
+//    builder.Configuration.AddAzureKeyVault(new Uri(keyVaultEndpoint), new DefaultAzureCredential());
+//    //builder.Configuration.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential());
+//}
+//string? keyVaultName = Environment.GetEnvironmentVariable("KEYVAULT_NAME");
+string? keyVaultEndpoint = Environment.GetEnvironmentVariable("KEYVAULT_ENDPOINT");
+// var kvUri = "https://" + keyVaultName + ".vault.azure.net";
+// var client = new SecretClient(new Uri(kvUri), new DefaultAzureCredential());
+if (!string.IsNullOrEmpty(keyVaultEndpoint))
 {
-    config.GetRequiredSection(SemanticKernelSettings.SectionName).Bind(options);
-});
+    var secretClient = new SecretClient(new Uri(keyVaultEndpoint!), new DefaultAzureCredential());
+    string? testSecret = secretClient.GetSecret("TestSecret").Value.Value;
+    var keyClient = new KeyClient(new Uri(keyVaultEndpoint!), new DefaultAzureCredential());
+    string? testKeyVaultUri = keyClient.GetKey("TestKey").Value.Properties.VaultUri.ToString();
+    Console.WriteLine($"Test Secret from Azure Key Vault: {testSecret}");
+    Console.WriteLine($"Test Key from Azure Key Vault Uri: {testKeyVaultUri}");
+}
+else Console.WriteLine($"The Azure Key Endpoint was null.");
+
+builder.Services.AddOptions<SemanticKernelSettings>().Configure<IConfiguration>((options, config) =>
+    {
+        config.GetRequiredSection(SemanticKernelSettings.SectionName).Bind(options);
+    });
 
 // REGISTER SEMANTIC KERNEL SERVICES BY CHOOSING A MODEL PROVIDER OPTION
 // THIS WILL ADD AND CONFIGURE THE KERNEL FOR THE CHOSEN MODEL PROVIDER, AND

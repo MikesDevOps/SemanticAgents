@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "secrets1": {
+      "type": "secrets",
+      "connectionId": "default-keyvault-v1-connection"
+    }
+  }
+}
